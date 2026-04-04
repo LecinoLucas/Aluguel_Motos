@@ -1,0 +1,52 @@
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Loader2 } from "lucide-react";
+
+interface AlertListCardProps<T> {
+  title: string;
+  description: string;
+  items: T[] | undefined;
+  isLoading: boolean;
+  emptyMessage: string;
+  itemToneClassName: string;
+  renderItem: (item: T) => { title: string; subtitle: string };
+}
+
+export function AlertListCard<T>({
+  title,
+  description,
+  items,
+  isLoading,
+  emptyMessage,
+  itemToneClassName,
+  renderItem,
+}: AlertListCardProps<T>) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base">{title}</CardTitle>
+        <CardDescription>{description}</CardDescription>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <Loader2 className="h-4 w-4 animate-spin" />
+        ) : items && items.length > 0 ? (
+          <ul className="space-y-2">
+            {items.slice(0, 3).map((item, index) => {
+              const content = renderItem(item);
+
+              return (
+                <li key={index} className={`dashboard-alert-item ${itemToneClassName}`}>
+                  <span className="font-medium">{content.title}</span>
+                  <br />
+                  <span className="text-xs text-muted-foreground">{content.subtitle}</span>
+                </li>
+              );
+            })}
+          </ul>
+        ) : (
+          <p className="text-sm text-muted-foreground">{emptyMessage}</p>
+        )}
+      </CardContent>
+    </Card>
+  );
+}

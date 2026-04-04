@@ -1,0 +1,18 @@
+@reference "../../index.css";
+
+@layer components {
+  .operacoes-page-shell {
+    @apply space-y-6;
+  }
+
+  .operacoes-page-header {
+    @apply rounded-2xl border bg-card px-5 py-5 shadow-sm sm:px-6;
+    background:
+      radial-gradient(circle at top right, color-mix(in oklab, var(--color-primary) 10%, transparent), transparent 34%),
+      linear-gradient(180deg, color-mix(in oklab, var(--color-card) 96%, white), var(--color-card));
+  }
+
+  .operacoes-section-card {
+    @apply overflow-hidden border shadow-sm;
+  }
+}

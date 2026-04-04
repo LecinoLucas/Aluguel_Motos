@@ -1,0 +1,18 @@
+@reference "../../index.css";
+
+@layer components {
+  .dashboard-shell {
+    @apply space-y-6 md:space-y-8;
+  }
+
+  .dashboard-hero {
+    @apply rounded-2xl border px-5 py-5 shadow-sm sm:px-6;
+    background:
+      radial-gradient(circle at top right, color-mix(in oklab, var(--color-primary) 12%, transparent), transparent 34%),
+      linear-gradient(180deg, color-mix(in oklab, var(--color-card) 96%, white), var(--color-card));
+  }
+
+  .dashboard-alert-item {
+    @apply rounded-lg border p-3 text-sm;
+  }
+}
