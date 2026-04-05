@@ -4,7 +4,9 @@ import { contratosRouter } from "./modules/contratos/contratos.router";
 import { dashboardRouter } from "./modules/dashboard/dashboard.router";
 import { documentosRouter } from "./modules/documentos/documentos.router";
 import { manutencoesRouter } from "./modules/manutencoes/manutencoes.router";
+import { multasRouter } from "./modules/multas/multas.router";
 import { pagamentosRouter } from "./modules/pagamentos/pagamentos.router";
+import { pecasRouter } from "./modules/pecas/pecas.router";
 import { tiposManutencaoRouter } from "./modules/tipos-manutencao/tipos-manutencao.router";
 import { systemRouter } from "./_core/systemRouter";
 import { clientesRouter } from "./modules/clientes/clientes.router";
@@ -42,8 +44,14 @@ export const appRouter = router({
   // ==================== MANUTENÇÕES ====================
   manutencoes: manutencoesRouter,
 
+  // ==================== MULTAS ====================
+  multas: multasRouter,
+
   // ==================== TIPOS DE MANUTENÇÃO ====================
   tiposManutencao: tiposManutencaoRouter,
+
+  // ==================== PEÇAS ====================
+  pecas: pecasRouter,
 
   // ==================== PAGAMENTOS ====================
   pagamentos: pagamentosRouter,

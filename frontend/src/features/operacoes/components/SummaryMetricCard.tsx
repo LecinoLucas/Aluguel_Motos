@@ -12,12 +12,12 @@ export function SummaryMetricCard({
   toneClassName = "",
 }: SummaryMetricCardProps) {
   return (
-    <Card className="operacoes-section-card">
-      <CardHeader>
+    <Card className="operacoes-section-card operacoes-metric-card">
+      <CardHeader className="operacoes-metric-card__header">
         <CardTitle className="text-base">{title}</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className={`text-2xl font-bold ${toneClassName}`.trim()}>{value}</div>
+        <div className={`operacoes-metric-card__value text-2xl font-bold ${toneClassName}`.trim()}>{value}</div>
       </CardContent>
     </Card>
   );

@@ -3,6 +3,8 @@ import type {
   LocadorFormErrors,
   LocatarioFormData,
   LocatarioFormErrors,
+  PecaFormData,
+  PecaFormErrors,
   TipoManutencaoFormData,
   TipoManutencaoFormErrors,
   VeiculoFormData,
@@ -183,6 +185,19 @@ export function validateTipoManutencaoForm(form: TipoManutencaoFormData): TipoMa
     if (!Number.isInteger(intervalo) || intervalo <= 0) {
       errors.intervaloDiasPadrao = "O intervalo padrão deve ser um número inteiro positivo.";
     }
+  }
+
+  return errors;
+}
+
+export function validatePecaForm(form: PecaFormData): PecaFormErrors {
+  const errors: PecaFormErrors = {};
+
+  if (!form.nome.trim()) errors.nome = "Informe o nome da peça.";
+  else if (form.nome.trim().length < 2) errors.nome = "O nome da peça precisa ter pelo menos 2 caracteres.";
+
+  if (form.descricao.trim() && form.descricao.trim().length > 240) {
+    errors.descricao = "A descrição pode ter no máximo 240 caracteres.";
   }
 
   return errors;

@@ -1,14 +1,73 @@
 import {
   date,
   integer,
+  jsonb,
   numeric,
   pgTable,
+  primaryKey,
   serial,
   text,
   timestamp,
   varchar,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
+
+export interface ContratoDocumentoLocadorSnapshot {
+  nome: string;
+  nacionalidade: string;
+  estadoCivil: string;
+  cpf: string;
+  rg: string;
+  orgaoEmissor: string;
+  endereco: string;
+  cidade: string;
+  estado: string;
+  cep: string;
+  telefone: string;
+}
+
+export interface ContratoDocumentoLocatarioSnapshot {
+  nome: string;
+  nacionalidade: string;
+  estadoCivil: string;
+  cpf: string;
+  rg: string;
+  orgaoEmissor: string;
+  endereco: string;
+  cidade: string;
+  estado: string;
+  cep: string;
+  telefone: string;
+  cnh: string;
+}
+
+export interface ContratoDocumentoVeiculoSnapshot {
+  marca: string;
+  modelo: string;
+  ano: string;
+  cor: string;
+  placa: string;
+  chassi: string;
+  renavam: string;
+}
+
+export interface ContratoDocumentoTermosSnapshot {
+  localContrato: string;
+  dataContrato: string;
+  dataInicio: string;
+  dataFim: string;
+  valorSemanal: string;
+  valorCaucao: string;
+  formaPagamento: string;
+  kmHodometro: string;
+}
+
+export interface ContratoDocumentoSnapshot {
+  locadores: ContratoDocumentoLocadorSnapshot[];
+  locatario: ContratoDocumentoLocatarioSnapshot;
+  veiculo: ContratoDocumentoVeiculoSnapshot;
+  termos: ContratoDocumentoTermosSnapshot;
+}
 
 /**
  * Core user table backing auth flow.
@@ -45,6 +104,7 @@ export const motos = pgTable("motos", {
   chassi: varchar("chassi", { length: 17 }),
   renavam: varchar("renavam", { length: 11 }),
   status: varchar("status", { length: 20 }).default("disponivel").notNull(),
+  disponibilidadeManual: varchar("disponibilidade_manual", { length: 20 }).default("automatico").notNull(),
   createdAt: timestamp("createdAt", { mode: "date" }).defaultNow().notNull(),
   updatedAt: timestamp("updatedAt", { mode: "date" })
     .defaultNow()
@@ -110,6 +170,23 @@ export type Locador = typeof locadores.$inferSelect;
 export type InsertLocador = typeof locadores.$inferInsert;
 
 /**
+ * Tabela de Peças
+ */
+export const pecas = pgTable("pecas", {
+  id: serial("id").primaryKey(),
+  nome: varchar("nome", { length: 120 }).notNull().unique(),
+  descricao: text("descricao"),
+  createdAt: timestamp("createdAt", { mode: "date" }).defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt", { mode: "date" })
+    .defaultNow()
+    .$onUpdateFn(() => new Date())
+    .notNull(),
+});
+
+export type Peca = typeof pecas.$inferSelect;
+export type InsertPeca = typeof pecas.$inferInsert;
+
+/**
  * Tabela de Tipos de Manutenção
  */
 export const tiposManutencao = pgTable("tipos_manutencao", {
@@ -132,7 +209,7 @@ export type InsertTipoManutencao = typeof tiposManutencao.$inferInsert;
  */
 export const contratos = pgTable("contratos", {
   id: serial("id").primaryKey(),
-  clienteId: integer("cliente_id")
+  locatarioId: integer("locatario_id")
     .notNull()
     .references(() => clientes.id, { onDelete: "restrict" }),
   motoId: integer("moto_id")
@@ -140,7 +217,9 @@ export const contratos = pgTable("contratos", {
     .references(() => motos.id, { onDelete: "restrict" }),
   dataInicio: date("data_inicio", { mode: "date" }).notNull(),
   dataFim: date("data_fim", { mode: "date" }).notNull(),
-  valorDiario: numeric("valor_diario", { precision: 10, scale: 2 }).notNull().default("0"),
+  valorSemanal: numeric("valor_semanal", { precision: 10, scale: 2 }).notNull().default("0"),
+  diasAposFim: integer("dias_apos_fim").notNull().default(0),
+  documentoSnapshot: jsonb("documento_snapshot").$type<ContratoDocumentoSnapshot | null>(),
   status: varchar("status", { length: 20 }).default("ativo").notNull(),
   createdAt: timestamp("createdAt", { mode: "date" }).defaultNow().notNull(),
   updatedAt: timestamp("updatedAt", { mode: "date" })
@@ -152,11 +231,31 @@ export const contratos = pgTable("contratos", {
 export type Contrato = typeof contratos.$inferSelect;
 export type InsertContrato = typeof contratos.$inferInsert;
 
+export const contratosLocadores = pgTable(
+  "contratos_locadores",
+  {
+    contratoId: integer("contrato_id")
+      .notNull()
+      .references(() => contratos.id, { onDelete: "cascade" }),
+    locadorId: integer("locador_id")
+      .notNull()
+      .references(() => locadores.id, { onDelete: "restrict" }),
+    createdAt: timestamp("createdAt", { mode: "date" }).defaultNow().notNull(),
+  },
+  (table) => ({
+    pk: primaryKey({ columns: [table.contratoId, table.locadorId] }),
+  }),
+);
+
+export type ContratoLocador = typeof contratosLocadores.$inferSelect;
+export type InsertContratoLocador = typeof contratosLocadores.$inferInsert;
+
 /**
  * Tabela de Manutenções
  */
 export const manutencoes = pgTable("manutencoes", {
   id: serial("id").primaryKey(),
+  contratoId: integer("contrato_id").references(() => contratos.id, { onDelete: "set null" }),
   motoId: integer("moto_id")
     .notNull()
     .references(() => motos.id, { onDelete: "cascade" }),
@@ -182,9 +281,12 @@ export type InsertManutencao = typeof manutencoes.$inferInsert;
  */
 export const pagamentos = pgTable("pagamentos", {
   id: serial("id").primaryKey(),
-  contratoId: integer("contrato_id")
-    .notNull()
-    .references(() => contratos.id, { onDelete: "cascade" }),
+  contratoId: integer("contrato_id").references(() => contratos.id, { onDelete: "cascade" }),
+  motoId: integer("moto_id").references(() => motos.id, { onDelete: "cascade" }),
+  manutencaoId: integer("manutencao_id").references(() => manutencoes.id, { onDelete: "cascade" }),
+  tipo: varchar("tipo", { length: 20 }).default("receber").notNull(),
+  origem: varchar("origem", { length: 20 }).default("manual").notNull(),
+  descricao: text("descricao"),
   valor: numeric("valor", { precision: 10, scale: 2 }).notNull().default("0"),
   data: date("data", { mode: "date" }).notNull(),
   status: varchar("status", { length: 20 }).default("pendente").notNull(),
@@ -197,6 +299,34 @@ export const pagamentos = pgTable("pagamentos", {
 
 export type Pagamento = typeof pagamentos.$inferSelect;
 export type InsertPagamento = typeof pagamentos.$inferInsert;
+
+/**
+ * Tabela de Multas e Prejuízos
+ */
+export const multas = pgTable("multas", {
+  id: serial("id").primaryKey(),
+  contratoId: integer("contrato_id")
+    .notNull()
+    .references(() => contratos.id, { onDelete: "cascade" }),
+  motoId: integer("moto_id")
+    .notNull()
+    .references(() => motos.id, { onDelete: "cascade" }),
+  tipo: varchar("tipo", { length: 20 }).default("multa").notNull(),
+  responsavel: varchar("responsavel", { length: 160 }).notNull(),
+  descricao: text("descricao").notNull(),
+  data: date("data", { mode: "date" }).notNull(),
+  valor: numeric("valor", { precision: 10, scale: 2 }).notNull().default("0"),
+  status: varchar("status", { length: 24 }).default("pendente").notNull(),
+  observacao: text("observacao"),
+  createdAt: timestamp("createdAt", { mode: "date" }).defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt", { mode: "date" })
+    .defaultNow()
+    .$onUpdateFn(() => new Date())
+    .notNull(),
+});
+
+export type Multa = typeof multas.$inferSelect;
+export type InsertMulta = typeof multas.$inferInsert;
 
 /**
  * Tabela de Notificações
@@ -227,22 +357,45 @@ export const clientesRelations = relations(clientes, ({ many }) => ({
 export const motosRelations = relations(motos, ({ many }) => ({
   contratos: many(contratos),
   manutencoes: many(manutencoes),
+  multas: many(multas),
+}));
+
+export const locadoresRelations = relations(locadores, ({ many }) => ({
+  contratosLocadores: many(contratosLocadores),
 }));
 
 export const contratosRelations = relations(contratos, ({ one, many }) => ({
-  cliente: one(clientes, {
-    fields: [contratos.clienteId],
+  locatario: one(clientes, {
+    fields: [contratos.locatarioId],
     references: [clientes.id],
   }),
   moto: one(motos, {
     fields: [contratos.motoId],
     references: [motos.id],
   }),
+  contratosLocadores: many(contratosLocadores),
+  manutencoes: many(manutencoes),
   pagamentos: many(pagamentos),
+  multas: many(multas),
   notificacoes: many(notificacoes),
 }));
 
+export const contratosLocadoresRelations = relations(contratosLocadores, ({ one }) => ({
+  contrato: one(contratos, {
+    fields: [contratosLocadores.contratoId],
+    references: [contratos.id],
+  }),
+  locador: one(locadores, {
+    fields: [contratosLocadores.locadorId],
+    references: [locadores.id],
+  }),
+}));
+
 export const manutencaosRelations = relations(manutencoes, ({ one }) => ({
+  contrato: one(contratos, {
+    fields: [manutencoes.contratoId],
+    references: [contratos.id],
+  }),
   moto: one(motos, {
     fields: [manutencoes.motoId],
     references: [motos.id],
@@ -257,6 +410,17 @@ export const pagamentosRelations = relations(pagamentos, ({ one }) => ({
   notificacoes: one(notificacoes, {
     fields: [pagamentos.id],
     references: [notificacoes.pagamentoId],
+  }),
+}));
+
+export const multasRelations = relations(multas, ({ one }) => ({
+  contrato: one(contratos, {
+    fields: [multas.contratoId],
+    references: [contratos.id],
+  }),
+  moto: one(motos, {
+    fields: [multas.motoId],
+    references: [motos.id],
   }),
 }));
 

@@ -27,29 +27,29 @@ export function ManutencaoPartAverageCard({ isLoading, rows, className }: Manute
       </CardHeader>
       <CardContent>
         {isLoading ? (
-          <div className="flex h-80 items-center justify-center">
+          <div className="operacoes-card-state h-80">
             <Loader2 className="h-8 w-8 animate-spin" />
           </div>
         ) : rows.length > 0 ? (
-          <div className="-mx-2 overflow-x-auto px-2">
-            <table className="w-full min-w-[760px] text-sm">
+          <div className="operacoes-table-wrap">
+            <table className="operacoes-table w-full min-w-[760px] text-sm">
               <thead>
-                <tr className="border-b">
-                  <th className="px-4 py-3 text-left font-medium">Peça</th>
-                  <th className="px-4 py-3 text-left font-medium">Trocas</th>
-                  <th className="px-4 py-3 text-left font-medium">Média</th>
-                  <th className="px-4 py-3 text-left font-medium">Total</th>
-                  <th className="px-4 py-3 text-left font-medium">Última troca</th>
+                <tr>
+                  <th>Peça</th>
+                  <th>Trocas</th>
+                  <th>Média</th>
+                  <th>Total</th>
+                  <th>Última troca</th>
                 </tr>
               </thead>
               <tbody>
                 {rows.map((row) => (
-                  <tr key={row.partLabel} className="border-b hover:bg-gray-50">
-                    <td className="px-4 py-3 font-medium">{row.partLabel}</td>
-                    <td className="px-4 py-3">{row.occurrences}</td>
-                    <td className="px-4 py-3">{formatCurrencyBR(row.averageCost)}</td>
-                    <td className="px-4 py-3 font-medium">{formatCurrencyBR(row.totalSpent)}</td>
-                    <td className="px-4 py-3">
+                  <tr key={row.partLabel}>
+                    <td data-label="Peça" className="font-medium">{row.partLabel}</td>
+                    <td data-label="Trocas">{row.occurrences}</td>
+                    <td data-label="Média">{formatCurrencyBR(row.averageCost)}</td>
+                    <td data-label="Total" className="font-medium">{formatCurrencyBR(row.totalSpent)}</td>
+                    <td data-label="Última troca">
                       <div className="flex flex-col">
                         <span>{formatDateBR(row.lastDate)}</span>
                         <span className="text-xs text-muted-foreground">{formatCurrencyBR(row.lastCost)}</span>
@@ -61,7 +61,7 @@ export function ManutencaoPartAverageCard({ isLoading, rows, className }: Manute
             </table>
           </div>
         ) : (
-          <div className="flex h-80 items-center justify-center text-muted-foreground">
+          <div className="operacoes-card-state h-80 text-muted-foreground">
             Nenhuma peça encontrada para este filtro.
           </div>
         )}

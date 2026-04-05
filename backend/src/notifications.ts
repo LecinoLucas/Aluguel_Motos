@@ -70,7 +70,8 @@ export async function verificarPagamentosAtrasados() {
       .where(
         and(
           lt(pagamentos.data, hoje),
-          eq(pagamentos.status, "pendente")
+          eq(pagamentos.status, "pendente"),
+          eq(pagamentos.tipo, "receber"),
         )
       );
 

@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2, Plus } from "lucide-react";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import type { UseFormReturn } from "react-hook-form";
 import type { ManutencaoFormValues } from "../validation";
 import { CadastroErrorAlert } from "@/features/cadastros/components/CadastroErrorAlert";
@@ -12,7 +12,16 @@ interface CreateManutencaoDialogProps {
   open: boolean;
   onOpenChange: (value: boolean) => void;
   form: UseFormReturn<ManutencaoFormValues>;
+  mode?: "create" | "edit";
+  trigger?: ReactNode;
+  dialogClassName?: string;
+  contratos: Array<{ id: number; motoId: number; label: string }>;
   motos: Array<{ id: number; marca?: string; modelo?: string; placa?: string }>;
+  pecas: Array<{
+    id: number;
+    nome: string;
+    descricao?: string | null;
+  }>;
   tiposManutencao: Array<{
     id: number;
     nome: string;
@@ -20,8 +29,13 @@ interface CreateManutencaoDialogProps {
     intervaloDiasPadrao?: number | null;
   }>;
   isSubmitting: boolean;
+  isCreatingPeca: boolean;
   isCreatingTipoManutencao: boolean;
   onSubmit: (data: ManutencaoFormValues) => void | Promise<void>;
+  onCreatePeca: (data: {
+    nome: string;
+    descricao?: string;
+  }) => Promise<void> | void;
   onCreateTipoManutencao: (data: {
     nome: string;
     descricao?: string;
@@ -38,18 +52,36 @@ export function CreateManutencaoDialog({
   open,
   onOpenChange,
   form,
+  mode = "create",
+  trigger,
+  contratos,
   motos,
+  pecas,
   tiposManutencao,
   isSubmitting,
+  isCreatingPeca,
   isCreatingTipoManutencao,
   onSubmit,
+  onCreatePeca,
   onCreateTipoManutencao,
+  dialogClassName,
 }: CreateManutencaoDialogProps) {
+  const [pecaDialogOpen, setPecaDialogOpen] = useState(false);
+  const [novaPecaNome, setNovaPecaNome] = useState("");
+  const [novaPecaDescricao, setNovaPecaDescricao] = useState("");
+  const [pecaDialogErrors, setPecaDialogErrors] = useState<string[]>([]);
   const [tipoDialogOpen, setTipoDialogOpen] = useState(false);
   const [novoTipoNome, setNovoTipoNome] = useState("");
   const [novoTipoDescricao, setNovoTipoDescricao] = useState("");
   const [novoTipoIntervalo, setNovoTipoIntervalo] = useState("");
   const [tipoDialogErrors, setTipoDialogErrors] = useState<string[]>([]);
+  const selectedContratoId = form.watch("contratoId");
+  const selectedMotoId = form.watch("motoId");
+  const selectedTipo = form.watch("tipo") || undefined;
+  const dialogTitle = mode === "edit" ? "Editar Manutenção" : "Registrar Manutenção";
+  const dialogDescription =
+    mode === "edit" ? "Atualize os dados do histórico de manutenção." : "Preencha os dados da manutenção";
+  const submitLabel = mode === "edit" ? "Salvar alterações" : "Registrar";
 
   const handleSelectTipo = (value: string) => {
     form.setValue("tipo", value, { shouldValidate: true });
@@ -59,11 +91,55 @@ export function CreateManutencaoDialog({
     }
   };
 
+  const handleSelectContrato = (value: string) => {
+    if (value === "0") {
+      form.setValue("contratoId", undefined, { shouldValidate: true });
+      return;
+    }
+
+    const contratoId = Number(value);
+    const contrato = contratos.find((item) => item.id === contratoId);
+    form.setValue("contratoId", contratoId, { shouldValidate: true });
+    if (contrato) {
+      form.setValue("motoId", contrato.motoId, { shouldValidate: true });
+    }
+  };
+
   const resetTipoDialog = () => {
     setNovoTipoNome("");
     setNovoTipoDescricao("");
     setNovoTipoIntervalo("");
     setTipoDialogErrors([]);
+  };
+
+  const resetPecaDialog = () => {
+    setNovaPecaNome("");
+    setNovaPecaDescricao("");
+    setPecaDialogErrors([]);
+  };
+
+  const handleCreatePecaClick = async () => {
+    const nextErrors: string[] = [];
+    if (!novaPecaNome.trim()) nextErrors.push("Informe o nome da peça.");
+    else if (novaPecaNome.trim().length < 2) nextErrors.push("O nome da peça precisa ter pelo menos 2 caracteres.");
+
+    if (novaPecaDescricao.trim().length > 240) {
+      nextErrors.push("A descrição da peça pode ter no máximo 240 caracteres.");
+    }
+
+    if (nextErrors.length > 0) {
+      setPecaDialogErrors(nextErrors);
+      return;
+    }
+
+    await onCreatePeca({
+      nome: novaPecaNome.trim(),
+      descricao: novaPecaDescricao.trim() || undefined,
+    });
+
+    form.setValue("peca", novaPecaNome.trim(), { shouldValidate: true });
+    resetPecaDialog();
+    setPecaDialogOpen(false);
   };
 
   const handleCreateTipo = async () => {
@@ -100,21 +176,42 @@ export function CreateManutencaoDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogTrigger asChild>
-        <Button className="w-full gap-2 sm:w-auto">
-          <Plus className="h-4 w-4" />
-          Registrar Manutenção
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-md">
+      {trigger ? <DialogTrigger asChild>{trigger}</DialogTrigger> : null}
+      <DialogContent className={`${dialogClassName ?? ""} max-h-[85vh] overflow-y-auto sm:max-w-md`.trim()}>
         <DialogHeader>
-          <DialogTitle>Registrar Manutenção</DialogTitle>
-          <DialogDescription>Preencha os dados da manutenção</DialogDescription>
+          <DialogTitle>{dialogTitle}</DialogTitle>
+          <DialogDescription>{dialogDescription}</DialogDescription>
         </DialogHeader>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
           <div>
+            <label className="text-sm font-medium">Contrato</label>
+            <Select
+              value={selectedContratoId ? String(selectedContratoId) : "0"}
+              onValueChange={handleSelectContrato}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Opcional" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="0">Sem contrato vinculado</SelectItem>
+                {contratos.map((contrato) => (
+                  <SelectItem key={contrato.id} value={contrato.id.toString()}>
+                    {contrato.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {form.formState.errors.contratoId ? (
+              <p className="mt-1 text-sm text-red-500">{form.formState.errors.contratoId.message?.toString()}</p>
+            ) : null}
+          </div>
+
+          <div>
             <label className="text-sm font-medium">Moto</label>
-            <Select onValueChange={(value) => form.setValue("motoId", Number(value), { shouldValidate: true })}>
+            <Select
+              value={selectedMotoId ? String(selectedMotoId) : undefined}
+              onValueChange={(value) => form.setValue("motoId", Number(value), { shouldValidate: true })}
+            >
               <SelectTrigger>
                 <SelectValue placeholder="Selecione uma moto" />
               </SelectTrigger>
@@ -133,7 +230,23 @@ export function CreateManutencaoDialog({
 
           <div>
             <label className="text-sm font-medium">Peça / componente</label>
-            <Input placeholder="Ex: Kit relação, pastilha de freio, óleo" {...form.register("peca")} />
+            <div className="mt-1 flex gap-2">
+              <div className="flex-1">
+                <Input
+                  list="pecas-cadastradas"
+                  placeholder="Ex: Kit relação, pastilha de freio, óleo"
+                  {...form.register("peca")}
+                />
+                <datalist id="pecas-cadastradas">
+                  {pecas.map((peca) => (
+                    <option key={peca.id} value={peca.nome} />
+                  ))}
+                </datalist>
+              </div>
+              <Button type="button" variant="outline" size="icon" onClick={() => setPecaDialogOpen(true)}>
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
             {form.formState.errors.peca ? (
               <p className="mt-1 text-sm text-red-500">{form.formState.errors.peca.message?.toString()}</p>
             ) : null}
@@ -142,7 +255,7 @@ export function CreateManutencaoDialog({
           <div>
             <label className="text-sm font-medium">Tipo de Manutenção</label>
             <div className="mt-1 flex gap-2">
-              <Select value={form.watch("tipo") || undefined} onValueChange={handleSelectTipo}>
+              <Select value={selectedTipo} onValueChange={handleSelectTipo}>
                 <SelectTrigger className="flex-1">
                   <SelectValue placeholder="Selecione um tipo cadastrado" />
                 </SelectTrigger>
@@ -197,9 +310,55 @@ export function CreateManutencaoDialog({
 
           <Button type="submit" disabled={isSubmitting} className="w-full">
             {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-            Registrar
+            {submitLabel}
           </Button>
         </form>
+
+        <Dialog
+          open={pecaDialogOpen}
+          onOpenChange={(nextOpen) => {
+            setPecaDialogOpen(nextOpen);
+            if (!nextOpen) resetPecaDialog();
+          }}
+        >
+          <DialogContent className={`${dialogClassName ?? ""} sm:max-w-md`.trim()}>
+            <DialogHeader>
+              <DialogTitle>Nova peça</DialogTitle>
+              <DialogDescription>
+                Cadastre uma peça nova sem sair do registro de manutenção.
+              </DialogDescription>
+            </DialogHeader>
+
+            <CadastroErrorAlert title="Revise os dados da peça" messages={pecaDialogErrors} />
+
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium">Nome</label>
+                <Input
+                  value={novaPecaNome}
+                  onChange={(event) => setNovaPecaNome(event.target.value)}
+                  placeholder="Ex: Kit relação"
+                  className="mt-1"
+                />
+              </div>
+
+              <div>
+                <label className="text-sm font-medium">Descrição</label>
+                <Input
+                  value={novaPecaDescricao}
+                  onChange={(event) => setNovaPecaDescricao(event.target.value)}
+                  placeholder="Ex: Relação completa com corrente"
+                  className="mt-1"
+                />
+              </div>
+
+              <Button type="button" onClick={handleCreatePecaClick} disabled={isCreatingPeca} className="w-full">
+                {isCreatingPeca ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                Salvar peça
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
 
         <Dialog
           open={tipoDialogOpen}
@@ -208,7 +367,7 @@ export function CreateManutencaoDialog({
             if (!nextOpen) resetTipoDialog();
           }}
         >
-          <DialogContent className="sm:max-w-md">
+          <DialogContent className={`${dialogClassName ?? ""} sm:max-w-md`.trim()}>
             <DialogHeader>
               <DialogTitle>Novo tipo de manutenção</DialogTitle>
               <DialogDescription>

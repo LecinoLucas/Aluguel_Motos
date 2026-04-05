@@ -15,13 +15,13 @@ export function StatusFilterCard<T extends string>({
   options,
 }: StatusFilterCardProps<T>) {
   return (
-    <Card className="operacoes-section-card">
+    <Card className="operacoes-section-card operacoes-filter-card">
       <CardHeader>
         <CardTitle className="text-base">{title}</CardTitle>
       </CardHeader>
       <CardContent>
         <Select value={value} onValueChange={(nextValue) => onValueChange(nextValue as T)}>
-          <SelectTrigger className="w-full md:w-48">
+          <SelectTrigger className="operacoes-filter-trigger w-full md:w-48">
             <SelectValue placeholder="Filtrar por status" />
           </SelectTrigger>
           <SelectContent>

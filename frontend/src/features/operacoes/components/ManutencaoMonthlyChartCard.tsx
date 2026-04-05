@@ -39,7 +39,7 @@ export function ManutencaoMonthlyChartCard({
       </CardHeader>
       <CardContent>
         {isLoading ? (
-          <div className="flex h-80 items-center justify-center">
+          <div className="operacoes-card-state h-80">
             <Loader2 className="h-8 w-8 animate-spin" />
           </div>
         ) : data.length > 0 ? (
@@ -56,7 +56,7 @@ export function ManutencaoMonthlyChartCard({
             </BarChart>
           </ResponsiveContainer>
         ) : (
-          <div className="flex h-80 items-center justify-center text-muted-foreground">
+          <div className="operacoes-card-state h-80 text-muted-foreground">
             Sem dados disponíveis
           </div>
         )}

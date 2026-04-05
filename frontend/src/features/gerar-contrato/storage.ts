@@ -10,26 +10,52 @@ import {
   type VeiculoData,
 } from "./types";
 
-export function loadStoredLocador(): LocadorData {
+function normalizeLocadorData(locador?: Partial<LocadorData> | null): LocadorData {
+  return {
+    ...defaultLocador,
+    ...locador,
+  };
+}
+
+export function loadStoredLocadores(): LocadorData[] {
   try {
     const saved = localStorage.getItem(LOCADOR_STORAGE_KEY);
-    return saved ? { ...defaultLocador, ...JSON.parse(saved) } : defaultLocador;
+    if (!saved) return [defaultLocador];
+
+    const parsed = JSON.parse(saved);
+    if (Array.isArray(parsed)) {
+      return parsed.length > 0 ? parsed.map((item) => normalizeLocadorData(item)) : [defaultLocador];
+    }
+
+    return [normalizeLocadorData(parsed)];
   } catch {
-    return defaultLocador;
+    return [defaultLocador];
   }
 }
 
 export function loadContratoHistory(): ContratoHistoryItem[] {
   try {
     const saved = localStorage.getItem(CONTRATOS_HISTORY_STORAGE_KEY);
-    return saved ? JSON.parse(saved) : [];
+    if (!saved) return [];
+
+    const parsed = JSON.parse(saved);
+    if (!Array.isArray(parsed)) return [];
+
+    return parsed.map((item) => ({
+      ...item,
+      locadores: Array.isArray(item.locadores)
+        ? item.locadores.map((locador: Partial<LocadorData>) => normalizeLocadorData(locador))
+        : item.locador
+          ? [normalizeLocadorData(item.locador)]
+          : [defaultLocador],
+    }));
   } catch {
     return [];
   }
 }
 
-export function persistLocador(locador: LocadorData) {
-  localStorage.setItem(LOCADOR_STORAGE_KEY, JSON.stringify(locador));
+export function persistLocadores(locadores: LocadorData[]) {
+  localStorage.setItem(LOCADOR_STORAGE_KEY, JSON.stringify(locadores));
 }
 
 export function persistContratoHistory(history: ContratoHistoryItem[]) {
@@ -37,11 +63,13 @@ export function persistContratoHistory(history: ContratoHistoryItem[]) {
 }
 
 export function createContratoHistoryItem(
-  locador: LocadorData,
+  locadores: LocadorData[],
   locatario: LocatarioData,
   veiculo: VeiculoData,
   termos: ContratoTermos,
 ): ContratoHistoryItem {
+  const normalizedLocadores =
+    locadores.length > 0 ? locadores.map((locador) => normalizeLocadorData(locador)) : [defaultLocador];
   const locatarioNome = locatario.nome?.trim() || "Locatário não informado";
   const veiculoLabel = [veiculo.modelo, veiculo.placa].filter(Boolean).join(" - ");
   const titulo = `${locatarioNome}${veiculoLabel ? ` (${veiculoLabel})` : ""}`;
@@ -50,7 +78,7 @@ export function createContratoHistoryItem(
     id: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
     createdAt: new Date().toISOString(),
     titulo,
-    locador: { ...locador },
+    locadores: normalizedLocadores,
     locatario: { ...locatario },
     veiculo: { ...veiculo },
     termos: { ...termos },

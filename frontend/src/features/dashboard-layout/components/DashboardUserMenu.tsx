@@ -18,9 +18,9 @@ export function DashboardUserMenu({ email, isCollapsed, name, onLogout }: Dashbo
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button className="flex w-full items-center gap-3 rounded-lg px-1 py-1 text-left transition-colors hover:bg-accent/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring group-data-[collapsible=icon]:justify-center">
-          <Avatar className="h-9 w-9 shrink-0 border">
-            <AvatarFallback className="text-xs font-medium">{name?.charAt(0).toUpperCase()}</AvatarFallback>
+        <button className="flex w-full items-center gap-3 rounded-2xl border border-sidebar-border/70 bg-sidebar/55 px-2 py-2 text-left transition-colors hover:bg-sidebar-accent/80 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring group-data-[collapsible=icon]:justify-center">
+          <Avatar className="h-9 w-9 shrink-0 border border-sidebar-border/80">
+            <AvatarFallback className="bg-primary/12 text-xs font-medium text-primary">{name?.charAt(0).toUpperCase()}</AvatarFallback>
           </Avatar>
           {!isCollapsed ? (
             <div className="min-w-0 flex-1">

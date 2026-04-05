@@ -9,6 +9,10 @@ export function formatDateBR(date: string | Date) {
   return new Date(date).toLocaleDateString("pt-BR");
 }
 
+export function formatPercent(value: number) {
+  return `${value.toFixed(1).replace(".", ",")}%`;
+}
+
 export function mapReceitaMensalChartData(receitaMensal: Record<string, number> | undefined) {
   if (!receitaMensal) {
     return [];

@@ -12,6 +12,7 @@ import { PanelLeft } from "lucide-react";
 import type { RefObject } from "react";
 import { menuItems } from "../constants";
 import { DashboardUserMenu } from "./DashboardUserMenu";
+import { ThemeToggleButton } from "./ThemeToggleButton";
 
 interface DashboardSidebarProps {
   isResizing: boolean;
@@ -45,14 +46,19 @@ export function DashboardSidebar({
           <div className="flex w-full items-center gap-3 px-2 transition-all">
             <button
               onClick={toggleSidebar}
-              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-colors hover:bg-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl border border-sidebar-border/70 bg-sidebar/70 transition-colors hover:bg-sidebar-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               aria-label="Toggle navigation"
             >
               <PanelLeft className="h-4 w-4 text-muted-foreground" />
             </button>
             {!isCollapsed ? (
               <div className="min-w-0 items-center gap-2">
-                <span className="truncate font-semibold tracking-tight">Aluguel de Motos</span>
+                <span className="truncate text-sm font-semibold tracking-[0.18em] text-sidebar-foreground/60 uppercase">
+                  Lecino Motos
+                </span>
+                <div className="truncate text-base font-semibold tracking-tight text-sidebar-foreground">
+                  Central de Aluguel
+                </div>
               </div>
             ) : null}
           </div>
@@ -81,6 +87,9 @@ export function DashboardSidebar({
         </SidebarContent>
 
         <SidebarFooter className="p-3">
+          <div className="px-1 pb-3">
+            <ThemeToggleButton compact={isCollapsed} />
+          </div>
           <DashboardUserMenu
             email={user?.email}
             isCollapsed={isCollapsed}

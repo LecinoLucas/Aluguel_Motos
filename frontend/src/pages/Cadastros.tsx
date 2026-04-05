@@ -11,6 +11,7 @@ import { EditLocadorDialog } from "@/features/cadastros/components/EditLocadorDi
 import { EditLocatarioDialog } from "@/features/cadastros/components/EditLocatarioDialog";
 import { LocadoresTab } from "@/features/cadastros/components/LocadoresTab";
 import { LocatariosTab } from "@/features/cadastros/components/LocatariosTab";
+import { PecasTab } from "@/features/cadastros/components/PecasTab";
 import { TiposManutencaoTab } from "@/features/cadastros/components/TiposManutencaoTab";
 import { VeiculosTab } from "@/features/cadastros/components/VeiculosTab";
 import { formatCepDisplay, formatCnhDisplay, formatCpfDisplay, formatPhoneDisplay, formatRgDisplay } from "@/features/cadastros/format";
@@ -25,11 +26,15 @@ import {
 import {
   defaultLocadorForm,
   defaultLocatarioForm,
+  defaultPecaForm,
   defaultVeiculoForm,
   defaultTipoManutencaoForm,
   type LocadorField,
   type LocadorFormErrors,
   type LocadorRecord,
+  type PecaField,
+  type PecaFormErrors,
+  type PecaRecord,
   type LocatarioField,
   type LocatarioFormErrors,
   type LocatarioRecord,
@@ -45,6 +50,7 @@ import {
   hasValidationErrors,
   validateLocadorForm,
   validateLocatarioForm,
+  validatePecaForm,
   validateTipoManutencaoForm,
   validateVeiculoForm,
 } from "@/features/cadastros/validation";
@@ -55,20 +61,31 @@ export default function Cadastros() {
   const [openLocador, setOpenLocador] = useState(false);
   const [openLocatario, setOpenLocatario] = useState(false);
   const [openVeiculo, setOpenVeiculo] = useState(false);
+  const [openPeca, setOpenPeca] = useState(false);
   const [openTipoManutencao, setOpenTipoManutencao] = useState(false);
   const [editLocadorOpen, setEditLocadorOpen] = useState(false);
   const [editLocatarioOpen, setEditLocatarioOpen] = useState(false);
+  const [editPecaOpen, setEditPecaOpen] = useState(false);
   const [editTipoManutencaoOpen, setEditTipoManutencaoOpen] = useState(false);
   const [editingLocadorId, setEditingLocadorId] = useState<number | null>(null);
   const [editingLocatarioId, setEditingLocatarioId] = useState<number | null>(null);
+  const [editingPecaId, setEditingPecaId] = useState<number | null>(null);
   const [editingTipoManutencaoId, setEditingTipoManutencaoId] = useState<number | null>(null);
   const [locadorSearchTerm, setLocadorSearchTerm] = useState("");
   const [locatarioSearchTerm, setLocatarioSearchTerm] = useState("");
+  const [veiculoSearchTerm, setVeiculoSearchTerm] = useState("");
+  const [pecaSearchTerm, setPecaSearchTerm] = useState("");
+  const [tipoManutencaoSearchTerm, setTipoManutencaoSearchTerm] = useState("");
   const [locadorForm, setLocadorForm] = useState(defaultLocadorForm);
   const [locatarioForm, setLocatarioForm] = useState(defaultLocatarioForm);
+  const [pecaForm, setPecaForm] = useState(defaultPecaForm);
   const [editLocadorForm, setEditLocadorForm] = useState(defaultLocadorForm);
   const [editLocatarioForm, setEditLocatarioForm] = useState(defaultLocatarioForm);
+  const [editPecaForm, setEditPecaForm] = useState(defaultPecaForm);
   const [veiculoForm, setVeiculoForm] = useState(defaultVeiculoForm);
+  const [editVeiculoOpen, setEditVeiculoOpen] = useState(false);
+  const [editingVeiculoId, setEditingVeiculoId] = useState<number | null>(null);
+  const [editVeiculoForm, setEditVeiculoForm] = useState(defaultVeiculoForm);
   const [tipoManutencaoForm, setTipoManutencaoForm] = useState(defaultTipoManutencaoForm);
   const [editTipoManutencaoForm, setEditTipoManutencaoForm] = useState(defaultTipoManutencaoForm);
   const [locadorErrors, setLocadorErrors] = useState<LocadorFormErrors>({});
@@ -76,6 +93,9 @@ export default function Cadastros() {
   const [editLocadorErrors, setEditLocadorErrors] = useState<LocadorFormErrors>({});
   const [editLocatarioErrors, setEditLocatarioErrors] = useState<LocatarioFormErrors>({});
   const [veiculoErrors, setVeiculoErrors] = useState<VeiculoFormErrors>({});
+  const [editVeiculoErrors, setEditVeiculoErrors] = useState<VeiculoFormErrors>({});
+  const [pecaErrors, setPecaErrors] = useState<PecaFormErrors>({});
+  const [editPecaErrors, setEditPecaErrors] = useState<PecaFormErrors>({});
   const [tipoManutencaoErrors, setTipoManutencaoErrors] = useState<TipoManutencaoFormErrors>({});
   const [editTipoManutencaoErrors, setEditTipoManutencaoErrors] = useState<TipoManutencaoFormErrors>({});
 
@@ -106,6 +126,7 @@ export default function Cadastros() {
   const locadores = trpc.locadores.list.useQuery();
   const locatarios = trpc.clientes.list.useQuery();
   const veiculos = trpc.motos.list.useQuery({ status: undefined });
+  const pecas = trpc.pecas.list.useQuery();
   const tiposManutencao = trpc.tiposManutencao.list.useQuery();
 
   const createLocador = trpc.locadores.create.useMutation();
@@ -115,7 +136,11 @@ export default function Cadastros() {
   const updateLocatario = trpc.clientes.update.useMutation();
   const deleteLocatario = trpc.clientes.delete.useMutation();
   const createVeiculo = trpc.motos.create.useMutation();
+  const updateVeiculo = trpc.motos.update.useMutation();
   const deleteVeiculo = trpc.motos.delete.useMutation();
+  const createPeca = trpc.pecas.create.useMutation();
+  const updatePeca = trpc.pecas.update.useMutation();
+  const deletePeca = trpc.pecas.delete.useMutation();
   const createTipoManutencao = trpc.tiposManutencao.create.useMutation();
   const updateTipoManutencao = trpc.tiposManutencao.update.useMutation();
   const deleteTipoManutencao = trpc.tiposManutencao.delete.useMutation();
@@ -127,6 +152,9 @@ export default function Cadastros() {
     : undefined;
   const veiculosLoadError = veiculos.error
     ? getErrorDetails(veiculos.error, "Erro ao carregar veículos").message
+    : undefined;
+  const pecasLoadError = pecas.error
+    ? getErrorDetails(pecas.error, "Erro ao carregar peças").message
     : undefined;
   const tiposManutencaoLoadError = tiposManutencao.error
     ? getErrorDetails(tiposManutencao.error, "Erro ao carregar tipos de manutenção").message
@@ -153,10 +181,25 @@ export default function Cadastros() {
     }
   };
 
+  const handleEditVeiculoOpenChange = (value: boolean) => {
+    setEditVeiculoOpen(value);
+    if (!value) {
+      setEditingVeiculoId(null);
+      setEditVeiculoErrors({});
+    }
+  };
+
   const handleTipoManutencaoOpenChange = (value: boolean) => {
     setOpenTipoManutencao(value);
     if (!value) {
       setTipoManutencaoErrors({});
+    }
+  };
+
+  const handlePecaOpenChange = (value: boolean) => {
+    setOpenPeca(value);
+    if (!value) {
+      setPecaErrors({});
     }
   };
 
@@ -181,6 +224,14 @@ export default function Cadastros() {
     if (!value) {
       setEditingTipoManutencaoId(null);
       setEditTipoManutencaoErrors({});
+    }
+  };
+
+  const handleEditPecaOpenChange = (value: boolean) => {
+    setEditPecaOpen(value);
+    if (!value) {
+      setEditingPecaId(null);
+      setEditPecaErrors({});
     }
   };
 
@@ -209,14 +260,29 @@ export default function Cadastros() {
     setVeiculoErrors((current) => clearFieldError(current, field));
   };
 
+  const handleEditVeiculoFormChange = (field: VeiculoField, value: string) => {
+    setEditVeiculoForm((current) => ({ ...current, [field]: value }));
+    setEditVeiculoErrors((current) => clearFieldError(current, field));
+  };
+
   const handleTipoManutencaoFormChange = (field: TipoManutencaoField, value: string) => {
     setTipoManutencaoForm((current) => ({ ...current, [field]: value }));
     setTipoManutencaoErrors((current) => clearFieldError(current, field));
   };
 
+  const handlePecaFormChange = (field: PecaField, value: string) => {
+    setPecaForm((current) => ({ ...current, [field]: value }));
+    setPecaErrors((current) => clearFieldError(current, field));
+  };
+
   const handleEditTipoManutencaoFormChange = (field: TipoManutencaoField, value: string) => {
     setEditTipoManutencaoForm((current) => ({ ...current, [field]: value }));
     setEditTipoManutencaoErrors((current) => clearFieldError(current, field));
+  };
+
+  const handleEditPecaFormChange = (field: PecaField, value: string) => {
+    setEditPecaForm((current) => ({ ...current, [field]: value }));
+    setEditPecaErrors((current) => clearFieldError(current, field));
   };
 
   const handleCreateLocador = async () => {
@@ -435,6 +501,60 @@ export default function Cadastros() {
     }
   };
 
+  const openEditVeiculo = (veiculo: VeiculoRecord) => {
+    setEditingVeiculoId(veiculo.id);
+    setEditVeiculoErrors({});
+    setEditVeiculoForm({
+      marca: veiculo.marca || "",
+      modelo: veiculo.modelo || "",
+      placa: veiculo.placa || "",
+      ano: veiculo.ano ? String(veiculo.ano) : "",
+      anoModelo: veiculo.anoModelo ? String(veiculo.anoModelo) : "",
+      cor: veiculo.cor || "",
+      chassi: veiculo.chassi || "",
+      renavam: veiculo.renavam || "",
+    });
+    setEditVeiculoOpen(true);
+  };
+
+  const handleUpdateVeiculo = async () => {
+    if (!editingVeiculoId) return;
+    const validationError = validateVeiculoForm(editVeiculoForm);
+    if (hasValidationErrors(validationError)) {
+      setEditVeiculoErrors(validationError);
+      return toast.error(getFirstInlineError(validationError) ?? getValidationMessages(validationError)[0]);
+    }
+
+    try {
+      await updateVeiculo.mutateAsync({
+        id: editingVeiculoId,
+        data: {
+          marca: editVeiculoForm.marca.trim(),
+          modelo: editVeiculoForm.modelo.trim(),
+          placa: editVeiculoForm.placa.trim().toUpperCase(),
+          ano: Number(editVeiculoForm.ano),
+          anoModelo: Number(editVeiculoForm.anoModelo),
+          cor: editVeiculoForm.cor.trim().toUpperCase(),
+          chassi: editVeiculoForm.chassi.trim().toUpperCase(),
+          renavam: editVeiculoForm.renavam.replace(/\D/g, ""),
+        },
+      });
+      toast.success("Veículo atualizado com sucesso!");
+      setEditVeiculoForm(defaultVeiculoForm);
+      setEditVeiculoErrors({});
+      setEditVeiculoOpen(false);
+      setEditingVeiculoId(null);
+      veiculos.refetch();
+    } catch (error) {
+      logClientError("Erro ao atualizar veículo", error);
+      const details = getErrorDetails(error, "Erro ao atualizar veículo");
+      if (Object.keys(details.fieldErrors).length > 0) {
+        setEditVeiculoErrors(mapFieldErrors<VeiculoField>(details.fieldErrors));
+      }
+      toast.error(details.message);
+    }
+  };
+
   const handleCreateTipoManutencao = async () => {
     const validationError = validateTipoManutencaoForm(tipoManutencaoForm);
     if (hasValidationErrors(validationError)) {
@@ -465,6 +585,33 @@ export default function Cadastros() {
     }
   };
 
+  const handleCreatePeca = async () => {
+    const validationError = validatePecaForm(pecaForm);
+    if (hasValidationErrors(validationError)) {
+      setPecaErrors(validationError);
+      return toast.error(getFirstInlineError(validationError) ?? getValidationMessages(validationError)[0]);
+    }
+
+    try {
+      await createPeca.mutateAsync({
+        nome: pecaForm.nome.trim(),
+        descricao: pecaForm.descricao.trim() || undefined,
+      });
+      toast.success("Peça cadastrada com sucesso!");
+      setPecaForm(defaultPecaForm);
+      setPecaErrors({});
+      setOpenPeca(false);
+      pecas.refetch();
+    } catch (error) {
+      logClientError("Erro ao cadastrar peça", error);
+      const details = getErrorDetails(error, "Erro ao cadastrar peça");
+      if (Object.keys(details.fieldErrors).length > 0) {
+        setPecaErrors(mapFieldErrors<PecaField>(details.fieldErrors));
+      }
+      toast.error(details.message);
+    }
+  };
+
   const openEditTipoManutencao = (tipo: TipoManutencaoRecord) => {
     setEditingTipoManutencaoId(tipo.id);
     setEditTipoManutencaoErrors({});
@@ -474,6 +621,16 @@ export default function Cadastros() {
       intervaloDiasPadrao: tipo.intervaloDiasPadrao ? String(tipo.intervaloDiasPadrao) : "",
     });
     setEditTipoManutencaoOpen(true);
+  };
+
+  const openEditPeca = (peca: PecaRecord) => {
+    setEditingPecaId(peca.id);
+    setEditPecaErrors({});
+    setEditPecaForm({
+      nome: peca.nome || "",
+      descricao: peca.descricao || "",
+    });
+    setEditPecaOpen(true);
   };
 
   const handleUpdateTipoManutencao = async () => {
@@ -511,7 +668,39 @@ export default function Cadastros() {
     }
   };
 
-  const handleDelete = async (type: "locador" | "locatario" | "veiculo" | "tipoManutencao", id: number) => {
+  const handleUpdatePeca = async () => {
+    if (!editingPecaId) return;
+    const validationError = validatePecaForm(editPecaForm);
+    if (hasValidationErrors(validationError)) {
+      setEditPecaErrors(validationError);
+      return toast.error(getFirstInlineError(validationError) ?? getValidationMessages(validationError)[0]);
+    }
+
+    try {
+      await updatePeca.mutateAsync({
+        id: editingPecaId,
+        data: {
+          nome: editPecaForm.nome.trim(),
+          descricao: editPecaForm.descricao.trim() || undefined,
+        },
+      });
+      toast.success("Peça atualizada com sucesso!");
+      setEditPecaForm(defaultPecaForm);
+      setEditPecaErrors({});
+      setEditPecaOpen(false);
+      setEditingPecaId(null);
+      pecas.refetch();
+    } catch (error) {
+      logClientError("Erro ao atualizar peça", error);
+      const details = getErrorDetails(error, "Erro ao atualizar peça");
+      if (Object.keys(details.fieldErrors).length > 0) {
+        setEditPecaErrors(mapFieldErrors<PecaField>(details.fieldErrors));
+      }
+      toast.error(details.message);
+    }
+  };
+
+  const handleDelete = async (type: "locador" | "locatario" | "veiculo" | "peca" | "tipoManutencao", id: number) => {
     if (!confirm("Tem certeza que deseja excluir?")) return;
     try {
       if (type === "locador") {
@@ -525,6 +714,10 @@ export default function Cadastros() {
       if (type === "veiculo") {
         await deleteVeiculo.mutateAsync({ id });
         veiculos.refetch();
+      }
+      if (type === "peca") {
+        await deletePeca.mutateAsync({ id });
+        pecas.refetch();
       }
       if (type === "tipoManutencao") {
         await deleteTipoManutencao.mutateAsync({ id });
@@ -548,16 +741,100 @@ export default function Cadastros() {
     return item.nome.toLowerCase().includes(term) || item.cpf.toLowerCase().includes(term);
   });
 
+  const filteredVeiculos = ((veiculos.data || []) as VeiculoRecord[]).filter((item) => {
+    const term = veiculoSearchTerm.trim().toLowerCase();
+    if (!term) return true;
+    return [item.marca, item.modelo, item.placa, item.renavam]
+      .filter((value): value is string => Boolean(value))
+      .some((value) => value.toLowerCase().includes(term));
+  });
+
+  const filteredPecas = ((pecas.data || []) as PecaRecord[]).filter((item) => {
+    const term = pecaSearchTerm.trim().toLowerCase();
+    if (!term) return true;
+    return [item.nome, item.descricao]
+      .filter((value): value is string => Boolean(value))
+      .some((value) => value.toLowerCase().includes(term));
+  });
+
+  const filteredTiposManutencao = ((tiposManutencao.data || []) as TipoManutencaoRecord[]).filter((item) => {
+    const term = tipoManutencaoSearchTerm.trim().toLowerCase();
+    if (!term) return true;
+    return item.nome.toLowerCase().includes(term);
+  });
+
+  const locadoresCount = (locadores.data || []).length;
+  const locatariosCount = (locatarios.data || []).length;
+  const veiculosCount = (veiculos.data || []).length;
+  const pecasCount = (pecas.data || []).length;
+  const tiposManutencaoCount = (tiposManutencao.data || []).length;
+  const activeTabLabel =
+    activeTab === "locadores"
+      ? "Locadores"
+      : activeTab === "locatarios"
+        ? "Locatários"
+        : activeTab === "veiculos"
+          ? "Veículos"
+          : activeTab === "pecas"
+            ? "Peças"
+            : "Tipos de manutenção";
+  const importStatusLabel = cadastroImport.isAnyImporting
+    ? "Importação em andamento"
+    : cadastroImport.backendAvailable === false
+      ? "OCR local ativo"
+      : "Leitura assistida disponível";
+
   return (
     <DashboardLayout>
       <div className="cadastros-page-shell">
-        <div className="cadastros-page-header">
-          <div className="cadastros-page-header__eyebrow">Base da operação</div>
-          <h1 className="cadastros-page-header__title">Cadastros</h1>
-          <p className="cadastros-page-header__subtitle">
-            Cadastre locadores, locatários, veículos e tipos de manutenção para abastecer os fluxos principais do sistema.
-          </p>
-        </div>
+        <section className="cadastros-page-header">
+          <div className="cadastros-page-header__content">
+            <div className="cadastros-page-header__main">
+              <div className="cadastros-page-header__eyebrow">Base da operação</div>
+              <h1 className="cadastros-page-header__title">Cadastros centrais</h1>
+              <p className="cadastros-page-header__subtitle">
+                Organize pessoas, veículos e catálogos operacionais em uma visão única, com leitura mais clara e ações mais rápidas.
+              </p>
+
+              <div className="cadastros-page-header__stats" aria-label="Resumo dos cadastros">
+                <article className="cadastros-page-header__stat">
+                  <span className="cadastros-page-header__stat-value">{locadoresCount}</span>
+                  <span className="cadastros-page-header__stat-label">Locadores</span>
+                </article>
+                <article className="cadastros-page-header__stat">
+                  <span className="cadastros-page-header__stat-value">{locatariosCount}</span>
+                  <span className="cadastros-page-header__stat-label">Locatários</span>
+                </article>
+                <article className="cadastros-page-header__stat">
+                  <span className="cadastros-page-header__stat-value">{veiculosCount}</span>
+                  <span className="cadastros-page-header__stat-label">Veículos</span>
+                </article>
+                <article className="cadastros-page-header__stat">
+                  <span className="cadastros-page-header__stat-value">{pecasCount}</span>
+                  <span className="cadastros-page-header__stat-label">Peças</span>
+                </article>
+                <article className="cadastros-page-header__stat">
+                  <span className="cadastros-page-header__stat-value">{tiposManutencaoCount}</span>
+                  <span className="cadastros-page-header__stat-label">Tipos</span>
+                </article>
+              </div>
+            </div>
+
+            <aside className="cadastros-page-header__aside">
+              <div className="cadastros-page-header__aside-card">
+                <span className="cadastros-page-header__aside-label">Área ativa</span>
+                <strong className="cadastros-page-header__aside-value">{activeTabLabel}</strong>
+                <p className="cadastros-page-header__aside-text">
+                  Acompanhe a área em foco e mantenha o fluxo de cadastro mais direto.
+                </p>
+                <div className="cadastros-page-header__aside-status">
+                  <span className="cadastros-page-header__aside-status-dot" aria-hidden="true" />
+                  <span>{importStatusLabel}</span>
+                </div>
+              </div>
+            </aside>
+          </div>
+        </section>
 
         {cadastroImport.backendAvailable === false ? (
           <Alert className="cadastros-page-notice">
@@ -573,17 +850,18 @@ export default function Cadastros() {
           </Alert>
         ) : null}
 
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="cadastros-tabs-root">
           <div className="cadastros-tabs-shell -mx-1 overflow-x-auto px-1 pb-1">
-            <TabsList className="cadastros-tabs-list grid min-w-[820px] grid-cols-4">
+            <TabsList className="cadastros-tabs-list min-w-[820px]">
               <TabsTrigger value="locadores">Locadores</TabsTrigger>
               <TabsTrigger value="locatarios">Locatários</TabsTrigger>
               <TabsTrigger value="veiculos">Veículos</TabsTrigger>
+              <TabsTrigger value="pecas">Peças</TabsTrigger>
               <TabsTrigger value="tiposManutencao">Tipos de manutenção</TabsTrigger>
             </TabsList>
           </div>
 
-          <TabsContent value="locadores">
+          <TabsContent value="locadores" className="cadastros-tab-panel">
             <LocadoresTab
               open={openLocador}
               onOpenChange={handleLocadorOpenChange}
@@ -607,7 +885,7 @@ export default function Cadastros() {
             />
           </TabsContent>
 
-          <TabsContent value="locatarios">
+          <TabsContent value="locatarios" className="cadastros-tab-panel">
             <LocatariosTab
               open={openLocatario}
               onOpenChange={handleLocatarioOpenChange}
@@ -636,19 +914,29 @@ export default function Cadastros() {
             />
           </TabsContent>
 
-          <TabsContent value="veiculos">
+          <TabsContent value="veiculos" className="cadastros-tab-panel">
             <VeiculosTab
               open={openVeiculo}
               onOpenChange={handleVeiculoOpenChange}
               form={veiculoForm}
               errors={veiculoErrors}
               onFormChange={handleVeiculoFormChange}
-              items={(veiculos.data || []) as VeiculoRecord[]}
+              editOpen={editVeiculoOpen}
+              onEditOpenChange={handleEditVeiculoOpenChange}
+              editForm={editVeiculoForm}
+              editErrors={editVeiculoErrors}
+              onEditFormChange={handleEditVeiculoFormChange}
+              items={filteredVeiculos}
               isLoading={veiculos.isLoading}
               loadErrorMessage={veiculosLoadError}
               isSubmitting={createVeiculo.isPending}
               onCreate={handleCreateVeiculo}
+              isUpdating={updateVeiculo.isPending}
+              onEdit={openEditVeiculo}
+              onUpdate={handleUpdateVeiculo}
               onDelete={(id) => handleDelete("veiculo", id)}
+              searchTerm={veiculoSearchTerm}
+              onSearchTermChange={setVeiculoSearchTerm}
               crlvImport={{
                 fileName: cadastroImport.importedFiles.crlv,
                 isImporting: cadastroImport.isImporting.crlv,
@@ -657,19 +945,21 @@ export default function Cadastros() {
             />
           </TabsContent>
 
-          <TabsContent value="tiposManutencao">
+          <TabsContent value="tiposManutencao" className="cadastros-tab-panel">
             <TiposManutencaoTab
               open={openTipoManutencao}
               onOpenChange={handleTipoManutencaoOpenChange}
               form={tipoManutencaoForm}
               errors={tipoManutencaoErrors}
               onFormChange={handleTipoManutencaoFormChange}
+              searchTerm={tipoManutencaoSearchTerm}
+              onSearchTermChange={setTipoManutencaoSearchTerm}
               editOpen={editTipoManutencaoOpen}
               onEditOpenChange={handleEditTipoManutencaoOpenChange}
               editForm={editTipoManutencaoForm}
               editErrors={editTipoManutencaoErrors}
               onEditFormChange={handleEditTipoManutencaoFormChange}
-              items={(tiposManutencao.data || []) as TipoManutencaoRecord[]}
+              items={filteredTiposManutencao}
               isLoading={tiposManutencao.isLoading}
               loadErrorMessage={tiposManutencaoLoadError}
               isSubmitting={createTipoManutencao.isPending}
@@ -678,6 +968,32 @@ export default function Cadastros() {
               onEdit={openEditTipoManutencao}
               onUpdate={handleUpdateTipoManutencao}
               onDelete={(id) => handleDelete("tipoManutencao", id)}
+            />
+          </TabsContent>
+
+          <TabsContent value="pecas" className="cadastros-tab-panel">
+            <PecasTab
+              open={openPeca}
+              onOpenChange={handlePecaOpenChange}
+              form={pecaForm}
+              errors={pecaErrors}
+              onFormChange={handlePecaFormChange}
+              searchTerm={pecaSearchTerm}
+              onSearchTermChange={setPecaSearchTerm}
+              editOpen={editPecaOpen}
+              onEditOpenChange={handleEditPecaOpenChange}
+              editForm={editPecaForm}
+              editErrors={editPecaErrors}
+              onEditFormChange={handleEditPecaFormChange}
+              items={filteredPecas}
+              isLoading={pecas.isLoading}
+              loadErrorMessage={pecasLoadError}
+              isSubmitting={createPeca.isPending}
+              isUpdating={updatePeca.isPending}
+              onCreate={handleCreatePeca}
+              onEdit={openEditPeca}
+              onUpdate={handleUpdatePeca}
+              onDelete={(id) => handleDelete("peca", id)}
             />
           </TabsContent>
         </Tabs>

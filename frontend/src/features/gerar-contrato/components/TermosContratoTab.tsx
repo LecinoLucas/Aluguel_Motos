@@ -13,7 +13,7 @@ export function TermosContratoTab({ termos, onUpdateTermos }: TermosContratoTabP
       <CardHeader>
         <CardTitle>Termos do Contrato</CardTitle>
       </CardHeader>
-      <CardContent className="grid gap-4 md:grid-cols-2">
+      <CardContent className="contract-terms-grid grid gap-4 md:grid-cols-2">
         <LabeledInput label="Local do contrato" value={termos.localContrato} onChange={(v) => onUpdateTermos("localContrato", v)} />
         <LabeledInput label="Data do contrato" type="date" value={termos.dataContrato} onChange={(v) => onUpdateTermos("dataContrato", v)} />
         <LabeledInput label="Início da locação" type="date" value={termos.dataInicio} onChange={(v) => onUpdateTermos("dataInicio", v)} />

@@ -29,9 +29,11 @@ export function AlertListCard<T>({
       </CardHeader>
       <CardContent>
         {isLoading ? (
-          <Loader2 className="h-4 w-4 animate-spin" />
+          <div className="dashboard-card-state dashboard-card-state--compact">
+            <Loader2 className="h-4 w-4 animate-spin" />
+          </div>
         ) : items && items.length > 0 ? (
-          <ul className="space-y-2">
+          <ul className="dashboard-alert-list">
             {items.slice(0, 3).map((item, index) => {
               const content = renderItem(item);
 
@@ -45,7 +47,7 @@ export function AlertListCard<T>({
             })}
           </ul>
         ) : (
-          <p className="text-sm text-muted-foreground">{emptyMessage}</p>
+          <div className="dashboard-card-state dashboard-card-state--compact text-sm text-muted-foreground">{emptyMessage}</div>
         )}
       </CardContent>
     </Card>

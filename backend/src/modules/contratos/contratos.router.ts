@@ -3,6 +3,14 @@ import { protectedProcedure, publicProcedure, router } from "../../_core/trpc";
 import * as validations from "../../validations";
 import * as contratosService from "./contratos.service";
 
+const renewContratoSchema = validations.createContratoSchema.pick({
+  locadorIds: true,
+  dataInicio: true,
+  dataFim: true,
+  valorSemanal: true,
+  diasAposFim: true,
+});
+
 export const contratosRouter = router({
   create: protectedProcedure
     .input(validations.createContratoSchema)
@@ -35,6 +43,17 @@ export const contratosRouter = router({
     )
     .mutation(async ({ input }) => {
       return contratosService.updateContrato(input.id, input.data);
+    }),
+
+  renew: protectedProcedure
+    .input(
+      z.object({
+        id: z.number(),
+        data: renewContratoSchema,
+      }),
+    )
+    .mutation(async ({ input }) => {
+      return contratosService.renewContrato(input.id, input.data);
     }),
 
   delete: protectedProcedure

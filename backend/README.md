@@ -199,7 +199,8 @@ Os testes cobrem:
 │   └── _core/               # Framework core
 ├── drizzle/
 │   ├── schema.ts            # Database schema
-│   └── migrations/          # SQL migrations
+│   ├── 0000_*.sql           # SQL migrations na raiz do Drizzle
+│   └── meta/                # Snapshots e journal do Drizzle
 ├── shared/
 │   └── ...                  # Tipos e constantes compartilhadas
 └── package.json

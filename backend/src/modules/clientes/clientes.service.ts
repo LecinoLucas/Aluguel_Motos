@@ -58,7 +58,7 @@ export async function updateCliente(id: number, data: Partial<InsertCliente>) {
 
 export async function deleteCliente(id: number) {
   await getClienteById(id);
-  const contratos = await contratosService.getContratosByCliente(id);
+  const contratos = await contratosService.getContratosByLocatario(id);
   if (contratos.length > 0) {
     throw new TRPCError({
       code: "CONFLICT",

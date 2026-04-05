@@ -3,15 +3,6 @@ import { protectedProcedure, publicProcedure, router } from "../../_core/trpc";
 import * as validations from "../../validations";
 import * as manutencoesService from "./manutencoes.service";
 
-const updateManutencaoSchema = z.object({
-  peca: z.string().min(2).optional(),
-  tipo: z.string().optional(),
-  custo: z.number().optional().transform((value) => value?.toString()),
-  kmAtual: z.number().int().positive().optional(),
-  intervaloDiasPrevisto: z.number().int().positive().optional(),
-  descricao: z.string().optional(),
-});
-
 export const manutencoesRouter = router({
   create: protectedProcedure
     .input(validations.createManutencaoSchema)
@@ -33,7 +24,7 @@ export const manutencoesRouter = router({
     .input(
       z.object({
         id: z.number(),
-        data: updateManutencaoSchema,
+        data: validations.updateManutencaoSchema,
       }),
     )
     .mutation(async ({ input }) => {

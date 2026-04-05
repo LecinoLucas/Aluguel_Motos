@@ -14,10 +14,11 @@ export const pagamentosRouter = router({
     .input(
       z.object({
         status: z.enum(["pendente", "pago", "atrasado"]).optional(),
+        tipo: z.enum(["receber", "pagar"]).optional(),
       }),
     )
     .query(async ({ input }) => {
-      return pagamentosService.listPagamentos(input.status);
+      return pagamentosService.listPagamentos(input.status, input.tipo);
     }),
 
   getById: publicProcedure

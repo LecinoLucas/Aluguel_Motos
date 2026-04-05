@@ -21,6 +21,26 @@ find_available_port() {
 	echo "$port"
 }
 
+wait_for_port() {
+	local port="$1"
+	local label="$2"
+	local attempts="${3:-60}"
+	local delay="${4:-0.5}"
+	local attempt=1
+
+	while (( attempt <= attempts )); do
+		if lsof -nP -iTCP:"$port" -sTCP:LISTEN >/dev/null 2>&1; then
+			return 0
+		fi
+
+		sleep "$delay"
+		attempt=$((attempt + 1))
+	done
+
+	echo "Nao foi possivel confirmar $label na porta $port dentro do tempo esperado." >&2
+	return 1
+}
+
 kill_listening_port() {
 	local port="$1"
 	local pids
@@ -81,6 +101,9 @@ echo "Iniciando backend em $BACKEND_DIR na porta $BACKEND_PORT"
 	PORT="$BACKEND_PORT" npm run dev
 ) &
 BACKEND_PID=$!
+
+echo "Aguardando backend ficar disponivel em $BACKEND_ORIGIN"
+wait_for_port "$BACKEND_PORT" "backend"
 
 echo "Iniciando frontend em $FRONTEND_DIR usando API em $BACKEND_ORIGIN"
 (

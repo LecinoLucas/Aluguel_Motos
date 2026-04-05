@@ -5,7 +5,8 @@ import { getDb } from "../../db";
 export async function createManutencao(data: InsertManutencao) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  return db.insert(manutencoes).values(data);
+  const [created] = await db.insert(manutencoes).values(data).returning();
+  return created;
 }
 
 export async function getManutencaoById(id: number) {

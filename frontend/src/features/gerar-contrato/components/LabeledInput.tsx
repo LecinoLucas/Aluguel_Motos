@@ -18,14 +18,14 @@ export function LabeledInput({
   className = "",
 }: LabeledInputProps) {
   return (
-    <div className={className}>
-      <label className="text-sm font-medium text-foreground">{label}</label>
+    <div className={`contract-field ${className}`.trim()}>
+      <label className="contract-field__label">{label}</label>
       <Input
         type={type}
         value={value}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
-        className="mt-1"
+        className="contract-field__input"
       />
     </div>
   );

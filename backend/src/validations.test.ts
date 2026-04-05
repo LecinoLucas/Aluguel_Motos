@@ -95,33 +95,34 @@ describe("Validações de Negócio", () => {
     it("deve calcular valor total corretamente", () => {
       const inicio = new Date("2024-01-01");
       const fim = new Date("2024-01-11");
-      const valorDiario = 100;
-      expect(calcularValorTotal(valorDiario, inicio, fim)).toBe(1000);
+      const valorSemanal = 100;
+      expect(calcularValorTotal(valorSemanal, inicio, fim)).toBe(200);
     });
 
-    it("deve calcular valor total com valor diário decimal", () => {
+    it("deve calcular valor total com valor semanal decimal", () => {
       const inicio = new Date("2024-01-01");
       const fim = new Date("2024-01-06");
-      const valorDiario = 50.5;
-      expect(calcularValorTotal(valorDiario, inicio, fim)).toBe(252.5);
+      const valorSemanal = 50.5;
+      expect(calcularValorTotal(valorSemanal, inicio, fim)).toBe(50.5);
     });
   });
 
   describe("calcularMultaAtraso", () => {
     it("deve calcular multa por atraso corretamente", () => {
-      const valorDiario = 100;
+      const valorSemanal = 700;
       const diasAtraso = 5;
-      const multa = calcularMultaAtraso(valorDiario, diasAtraso);
-      expect(multa).toBe(50); // 100 * 5 * 0.1 = 50
+      const multa = calcularMultaAtraso(valorSemanal, diasAtraso);
+      expect(multa).toBe(50);
     });
 
-    it("deve calcular multa com valor diário decimal", () => {
-      const valorDiario = 50.5;
+    it("deve calcular multa com valor semanal decimal", () => {
+      const valorSemanal = 353.5;
       const diasAtraso = 2;
-      const multa = calcularMultaAtraso(valorDiario, diasAtraso);
-      expect(multa).toBeCloseTo(10.1, 2); // 50.5 * 2 * 0.1 = 10.1
+      const multa = calcularMultaAtraso(valorSemanal, diasAtraso);
+      expect(multa).toBeCloseTo(10.1, 2);
     });
   });
+
 
   describe("contratoProximoVencimento", () => {
     it("deve retornar true para contrato vencendo em 2 dias", () => {

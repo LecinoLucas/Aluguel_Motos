@@ -13,7 +13,7 @@ export function CadastroField({ label, error, hint, className, ...props }: Cadas
   const id = useId();
 
   return (
-    <div className="space-y-1.5">
+    <div className="cadastros-field">
       <Label htmlFor={id}>{label}</Label>
       <Input
         id={id}

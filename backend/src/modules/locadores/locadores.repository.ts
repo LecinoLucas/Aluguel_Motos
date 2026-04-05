@@ -1,4 +1,4 @@
-import { desc, eq } from "drizzle-orm";
+import { desc, eq, inArray } from "drizzle-orm";
 import { type InsertLocador, locadores } from "../../../drizzle/schema";
 import { getDb } from "../../db";
 
@@ -19,6 +19,14 @@ export async function getLocadorById(id: number) {
   if (!db) throw new Error("Database not available");
   const result = await db.select().from(locadores).where(eq(locadores.id, id)).limit(1);
   return result[0];
+}
+
+export async function getLocadoresByIds(ids: number[]) {
+  if (ids.length === 0) return [];
+
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.select().from(locadores).where(inArray(locadores.id, ids));
 }
 
 export async function getLocadorByCpf(cpf: string) {

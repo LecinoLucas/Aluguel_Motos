@@ -1,0 +1,1 @@
+ALTER TABLE "motos" ADD COLUMN "disponibilidade_manual" varchar(20) DEFAULT 'automatico' NOT NULL;

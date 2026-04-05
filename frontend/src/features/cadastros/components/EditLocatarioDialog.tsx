@@ -27,17 +27,24 @@ export function EditLocatarioDialog({
 }: EditLocatarioDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
+      <DialogContent
+        overlayClassName="cadastros-dialog-overlay"
+        className="cadastros-dialog sm:max-w-2xl"
+      >
         <DialogHeader>
           <DialogTitle>Editar Locatário</DialogTitle>
           <DialogDescription>Atualize os dados do locatário selecionado</DialogDescription>
         </DialogHeader>
-        <CadastroErrorAlert title="Revise os dados do locatário" messages={getValidationMessages(errors)} />
-        <LocatarioFormFields form={form} errors={errors} onChange={onFormChange} disableImmutable />
-        <Button onClick={onSave} disabled={isSubmitting} className="w-full">
-          {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          Salvar Alterações
-        </Button>
+        <div className="cadastros-dialog__body">
+          <CadastroErrorAlert title="Revise os dados do locatário" messages={getValidationMessages(errors)} />
+          <LocatarioFormFields form={form} errors={errors} onChange={onFormChange} disableImmutable />
+        </div>
+        <div className="cadastros-dialog__footer">
+          <Button onClick={onSave} disabled={isSubmitting} className="cadastros-primary-button w-full sm:w-auto">
+            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Salvar Alterações
+          </Button>
+        </div>
       </DialogContent>
     </Dialog>
   );

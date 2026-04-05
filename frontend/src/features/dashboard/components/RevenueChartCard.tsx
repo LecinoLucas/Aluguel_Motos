@@ -17,7 +17,7 @@ export function RevenueChartCard({ isLoading, chartData }: RevenueChartCardProps
       </CardHeader>
       <CardContent>
         {isLoading ? (
-          <div className="flex h-80 items-center justify-center">
+          <div className="dashboard-card-state h-80">
             <Loader2 className="h-8 w-8 animate-spin" />
           </div>
         ) : chartData.length > 0 ? (
@@ -31,7 +31,7 @@ export function RevenueChartCard({ isLoading, chartData }: RevenueChartCardProps
             </LineChart>
           </ResponsiveContainer>
         ) : (
-          <div className="flex h-80 items-center justify-center text-muted-foreground">
+          <div className="dashboard-card-state h-80 text-muted-foreground">
             Sem dados disponíveis
           </div>
         )}

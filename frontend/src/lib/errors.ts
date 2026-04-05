@@ -102,6 +102,14 @@ function mapKnownMessage(message: string): Partial<ErrorDetails> {
         fieldErrors: { nome: "Este tipo de manutenção já está cadastrado." },
       };
     }
+
+    if (lower.includes("pecas") && lower.includes("nome")) {
+      return {
+        message: "Já existe uma peça com este nome.",
+        details: ["Use outro nome ou ajuste a peça já cadastrada."],
+        fieldErrors: { nome: "Esta peça já está cadastrada." },
+      };
+    }
   }
 
   if (

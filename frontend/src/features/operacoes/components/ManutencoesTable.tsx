@@ -1,15 +1,18 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, Trash2 } from "lucide-react";
-import type { MotoListItem } from "@/lib/trpc-types";
+import { Loader2, Pencil, Trash2 } from "lucide-react";
+import type { ContratoListItem, MotoListItem } from "@/lib/trpc-types";
 import type { ManutencaoRecord } from "../types";
-import { formatCurrencyBR, formatDateBR } from "../utils";
+import { formatContratoCode, formatCurrencyBR, formatDateBR } from "../utils";
 
 interface ManutencoesTableProps {
   items: ManutencaoRecord[];
+  contratos?: ContratoListItem[];
   motos?: MotoListItem[];
   isLoading: boolean;
+  onEdit: (item: ManutencaoRecord) => void;
   onDelete: (id: number) => void;
+  editPending: boolean;
   deletePending: boolean;
 }
 
@@ -19,7 +22,17 @@ function formatMotoLabel(moto?: MotoListItem) {
   return `${name || "Moto"} ${moto.placa ? `(${moto.placa})` : ""}`.trim();
 }
 
-export function ManutencoesTable({ items, motos = [], isLoading, onDelete, deletePending }: ManutencoesTableProps) {
+export function ManutencoesTable({
+  items,
+  contratos = [],
+  motos = [],
+  isLoading,
+  onEdit,
+  onDelete,
+  editPending,
+  deletePending,
+}: ManutencoesTableProps) {
+  const contratosById = new Map(contratos.map((contrato) => [contrato.id, contrato]));
   const motoById = new Map(motos.map((moto) => [moto.id, moto]));
 
   return (
@@ -30,40 +43,49 @@ export function ManutencoesTable({ items, motos = [], isLoading, onDelete, delet
       </CardHeader>
       <CardContent>
         {isLoading ? (
-          <div className="flex items-center justify-center py-8">
+          <div className="operacoes-card-state">
             <Loader2 className="h-8 w-8 animate-spin" />
           </div>
         ) : items.length > 0 ? (
-          <div className="-mx-2 overflow-x-auto px-2">
-            <table className="w-full min-w-[1080px] text-sm">
+          <div className="operacoes-table-wrap">
+            <table className="operacoes-table w-full min-w-[1080px] text-sm">
               <thead>
-                <tr className="border-b">
-                  <th className="px-4 py-3 text-left font-medium">Moto</th>
-                  <th className="px-4 py-3 text-left font-medium">Peça</th>
-                  <th className="px-4 py-3 text-left font-medium">Tipo</th>
-                  <th className="px-4 py-3 text-left font-medium">Data</th>
-                  <th className="px-4 py-3 text-left font-medium">Custo</th>
-                  <th className="px-4 py-3 text-left font-medium">KM</th>
-                  <th className="px-4 py-3 text-left font-medium">Intervalo</th>
-                  <th className="px-4 py-3 text-left font-medium">Descrição</th>
-                  <th className="px-4 py-3 text-left font-medium">Ações</th>
+                <tr>
+                  <th>Contrato</th>
+                  <th>Moto</th>
+                  <th>Peça</th>
+                  <th>Tipo</th>
+                  <th>Data</th>
+                  <th>Custo</th>
+                  <th>KM</th>
+                  <th>Intervalo</th>
+                  <th>Descrição</th>
+                  <th>Ações</th>
                 </tr>
               </thead>
               <tbody>
                 {items.map((item) => (
-                  <tr key={item.id} className="border-b hover:bg-gray-50">
-                    <td className="px-4 py-3">{formatMotoLabel(motoById.get(item.motoId))}</td>
-                    <td className="px-4 py-3">{item.peca || "-"}</td>
-                    <td className="px-4 py-3">{item.tipo}</td>
-                    <td className="px-4 py-3">{formatDateBR(item.data)}</td>
-                    <td className="px-4 py-3 font-medium">{formatCurrencyBR(item.custo)}</td>
-                    <td className="px-4 py-3">{item.kmAtual ? item.kmAtual.toLocaleString("pt-BR") : "-"}</td>
-                    <td className="px-4 py-3">{item.intervaloDiasPrevisto ? `${item.intervaloDiasPrevisto} dias` : "-"}</td>
-                    <td className="px-4 py-3 text-xs">{item.descricao || "-"}</td>
-                    <td className="px-4 py-3">
-                      <Button variant="ghost" size="sm" onClick={() => onDelete(item.id)} disabled={deletePending}>
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                  <tr key={item.id}>
+                    <td data-label="Contrato">
+                      {item.contratoId ? (contratosById.has(item.contratoId) ? formatContratoCode(item.contratoId) : `#${item.contratoId}`) : "-"}
+                    </td>
+                    <td data-label="Moto">{formatMotoLabel(motoById.get(item.motoId))}</td>
+                    <td data-label="Peça">{item.peca || "-"}</td>
+                    <td data-label="Tipo">{item.tipo}</td>
+                    <td data-label="Data">{formatDateBR(item.data)}</td>
+                    <td data-label="Custo" className="font-medium">{formatCurrencyBR(item.custo)}</td>
+                    <td data-label="KM">{item.kmAtual ? item.kmAtual.toLocaleString("pt-BR") : "-"}</td>
+                    <td data-label="Intervalo">{item.intervaloDiasPrevisto ? `${item.intervaloDiasPrevisto} dias` : "-"}</td>
+                    <td data-label="Descrição" className="text-xs">{item.descricao || "-"}</td>
+                    <td data-label="Ações">
+                      <div className="flex items-center gap-1">
+                        <Button variant="ghost" size="sm" onClick={() => onEdit(item)} disabled={editPending}>
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => onDelete(item.id)} disabled={deletePending}>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -71,7 +93,7 @@ export function ManutencoesTable({ items, motos = [], isLoading, onDelete, delet
             </table>
           </div>
         ) : (
-          <div className="py-8 text-center text-muted-foreground">
+          <div className="operacoes-table-empty">
             Nenhuma manutenção registrada. Clique em "Registrar Manutenção" para adicionar.
           </div>
         )}

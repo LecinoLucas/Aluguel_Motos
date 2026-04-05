@@ -1,12 +1,14 @@
 import { useMemo, useState } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { getErrorMessage } from "@/lib/errors";
 import { trpc } from "@/lib/trpc";
-import type { MotoListItem, TipoManutencaoListItem } from "@/lib/trpc-types";
-import { useForm, type Resolver } from "react-hook-form";
+import type { ContratoListItem, MotoListItem, PecaListItem, TipoManutencaoListItem } from "@/lib/trpc-types";
+import { useForm, type DefaultValues, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Plus } from "lucide-react";
 import { toast } from "sonner";
 import { CreateManutencaoDialog } from "@/features/operacoes/components/CreateManutencaoDialog";
 import { ManutencaoMonthlyChartCard, type ManutencaoMonthlyPoint } from "@/features/operacoes/components/ManutencaoMonthlyChartCard";
@@ -39,6 +41,18 @@ type MaintenanceInsightRow = {
 
 type MaintenancePartAverageInsightRow = MaintenancePartAverageRow;
 
+const MANUTENCAO_FORM_DEFAULT_VALUES: DefaultValues<ManutencaoFormValues> = {
+  contratoId: undefined,
+  motoId: undefined,
+  peca: "",
+  tipo: "",
+  data: "",
+  custo: undefined,
+  kmAtual: undefined,
+  intervaloDiasPrevisto: undefined,
+  descricao: "",
+};
+
 function getMonthKey(date: Date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
 }
@@ -49,6 +63,20 @@ function formatMonthShortLabel(date: Date) {
 
 function toDate(value: string | Date) {
   return value instanceof Date ? value : new Date(value);
+}
+
+function formatDateInputValue(value: string | Date) {
+  if (typeof value === "string") {
+    const normalized = value.match(/^\d{4}-\d{2}-\d{2}/)?.[0];
+    if (normalized) return normalized;
+  }
+
+  const date = toDate(value);
+  if (Number.isNaN(date.getTime())) return "";
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
 
 function diffDays(later: Date, earlier: Date) {
@@ -196,23 +224,29 @@ function buildMaintenanceInsights(items: ManutencaoRecord[], motos: MotoListItem
 
 export default function Manutencoes() {
   const [open, setOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editingManutencao, setEditingManutencao] = useState<ManutencaoRecord | null>(null);
   const [selectedMotoId, setSelectedMotoId] = useState<string>("all");
 
   const manutencoes = trpc.manutencoes.list.useQuery();
   const motos = trpc.motos.list.useQuery({});
+  const contratos = trpc.contratos.list.useQuery({});
+  const pecas = trpc.pecas.list.useQuery();
   const tiposManutencao = trpc.tiposManutencao.list.useQuery();
   const createManutencao = trpc.manutencoes.create.useMutation();
+  const updateManutencao = trpc.manutencoes.update.useMutation();
+  const createPeca = trpc.pecas.create.useMutation();
   const createTipoManutencao = trpc.tiposManutencao.create.useMutation();
   const deleteManutencao = trpc.manutencoes.delete.useMutation();
 
   const form = useForm<ManutencaoFormValues>({
     resolver: zodResolver(createManutencaoSchema) as Resolver<ManutencaoFormValues>,
-    defaultValues: {
-      descricao: "",
-      peca: "",
-      kmAtual: undefined,
-      intervaloDiasPrevisto: undefined,
-    },
+    defaultValues: MANUTENCAO_FORM_DEFAULT_VALUES,
+  });
+
+  const editForm = useForm<ManutencaoFormValues>({
+    resolver: zodResolver(createManutencaoSchema) as Resolver<ManutencaoFormValues>,
+    defaultValues: MANUTENCAO_FORM_DEFAULT_VALUES,
   });
 
   const onSubmit = async (data: ManutencaoFormValues) => {
@@ -222,12 +256,71 @@ export default function Manutencoes() {
         data: new Date(data.data),
       });
       toast.success("Manutenção registrada com sucesso!");
-      form.reset();
+      form.reset(MANUTENCAO_FORM_DEFAULT_VALUES);
       setOpen(false);
       await manutencoes.refetch();
     } catch (error) {
       toast.error(getErrorMessage(error, "Erro ao registrar manutenção"));
     }
+  };
+
+  const onEditSubmit = async (data: ManutencaoFormValues) => {
+    if (!editingManutencao) return;
+
+    try {
+      await updateManutencao.mutateAsync({
+        id: editingManutencao.id,
+        data: {
+          contratoId: data.contratoId ?? null,
+          motoId: data.motoId,
+          peca: data.peca,
+          tipo: data.tipo,
+          data: new Date(data.data),
+          custo: data.custo,
+          kmAtual: data.kmAtual,
+          intervaloDiasPrevisto: data.intervaloDiasPrevisto,
+          descricao: data.descricao,
+        },
+      });
+      toast.success("Manutenção atualizada com sucesso!");
+      editForm.reset(MANUTENCAO_FORM_DEFAULT_VALUES);
+      setEditingManutencao(null);
+      setEditOpen(false);
+      await manutencoes.refetch();
+    } catch (error) {
+      toast.error(getErrorMessage(error, "Erro ao atualizar manutenção"));
+    }
+  };
+
+  const handleCreateOpenChange = (nextOpen: boolean) => {
+    setOpen(nextOpen);
+    if (!nextOpen) {
+      form.reset(MANUTENCAO_FORM_DEFAULT_VALUES);
+    }
+  };
+
+  const handleEditOpenChange = (nextOpen: boolean) => {
+    setEditOpen(nextOpen);
+    if (!nextOpen) {
+      editForm.reset(MANUTENCAO_FORM_DEFAULT_VALUES);
+      setEditingManutencao(null);
+    }
+  };
+
+  const handleEdit = (item: ManutencaoRecord) => {
+    setEditingManutencao(item);
+    editForm.reset({
+      contratoId: item.contratoId ?? undefined,
+      motoId: item.motoId,
+      peca: item.peca ?? "",
+      tipo: item.tipo,
+      data: formatDateInputValue(item.data),
+      custo: Number(item.custo),
+      kmAtual: item.kmAtual ?? undefined,
+      intervaloDiasPrevisto: item.intervaloDiasPrevisto ?? undefined,
+      descricao: item.descricao ?? "",
+    });
+    setEditOpen(true);
   };
 
   const handleDelete = async (id: number) => {
@@ -242,8 +335,22 @@ export default function Manutencoes() {
   };
 
   const manutencaoItems = (manutencoes.data ?? []) as ManutencaoRecord[];
+  const contratoItems = (contratos.data ?? []) as ContratoListItem[];
   const motoItems = (motos.data ?? []) as MotoListItem[];
+  const pecaItems = (pecas.data ?? []) as PecaListItem[];
   const tipoItems = (tiposManutencao.data ?? []) as TipoManutencaoListItem[];
+  const contratoOptions = useMemo(
+    () =>
+      contratoItems.map((contrato) => {
+        const moto = motoItems.find((item) => item.id === contrato.motoId);
+        return {
+          id: contrato.id,
+          motoId: contrato.motoId,
+          label: `${formatDateBR(contrato.dataInicio)} • ${formatMotoLabel(moto)} • CTR-${String(contrato.id).padStart(6, "0")}`,
+        };
+      }),
+    [contratoItems, motoItems],
+  );
 
   const filteredManutencoes = useMemo(() => {
     if (selectedMotoId === "all") return manutencaoItems;
@@ -269,20 +376,58 @@ export default function Manutencoes() {
   return (
     <DashboardLayout>
       <div className="operacoes-page-shell">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <PageHeaderCard
-            title="Manutenções"
-            description="Acompanhe custos, trocas de peças e manutenção precoce da frota."
-          />
+        <PageHeaderCard
+          title="Manutenções"
+          description="Acompanhe custos, trocas de peças e manutenção precoce da frota com uma leitura mais direta da operação."
+          eyebrow="Centro de manutenção"
+        >
+          <div className="operacoes-page-header__stats">
+            <article className="operacoes-page-header__stat">
+              <span className="operacoes-page-header__stat-value">{formatCurrencyBR(insights.spentLastWindow)}</span>
+              <span className="operacoes-page-header__stat-label">Últimos 90 dias</span>
+            </article>
+            <article className="operacoes-page-header__stat">
+              <span className="operacoes-page-header__stat-value">{insights.earlyRows.length}</span>
+              <span className="operacoes-page-header__stat-label">Trocas precoces</span>
+            </article>
+            <article className="operacoes-page-header__stat">
+              <span className="operacoes-page-header__stat-value">{filteredManutencoes.length}</span>
+              <span className="operacoes-page-header__stat-label">Registros filtrados</span>
+            </article>
+          </div>
+
           <CreateManutencaoDialog
             open={open}
-            onOpenChange={setOpen}
+            onOpenChange={handleCreateOpenChange}
             form={form}
+            trigger={
+              <Button className="operacoes-primary-button w-full gap-2 sm:w-auto">
+                <Plus className="h-4 w-4" />
+                Registrar Manutenção
+              </Button>
+            }
+            dialogClassName="operacoes-dialog"
+            contratos={contratoOptions}
             motos={motoItems}
+            pecas={pecaItems}
             tiposManutencao={tipoItems}
             isSubmitting={createManutencao.isPending}
+            isCreatingPeca={createPeca.isPending}
             isCreatingTipoManutencao={createTipoManutencao.isPending}
             onSubmit={onSubmit}
+            onCreatePeca={async (data) => {
+              try {
+                await createPeca.mutateAsync({
+                  nome: data.nome,
+                  descricao: data.descricao ?? "",
+                });
+                toast.success("Peça cadastrada com sucesso!");
+                await pecas.refetch();
+              } catch (error) {
+                toast.error(getErrorMessage(error, "Erro ao cadastrar peça"));
+                throw error;
+              }
+            }}
             onCreateTipoManutencao={async (data) => {
               try {
                 await createTipoManutencao.mutateAsync({
@@ -298,16 +443,59 @@ export default function Manutencoes() {
               }
             }}
           />
-        </div>
+        </PageHeaderCard>
 
-        <Card className="operacoes-section-card">
+        <CreateManutencaoDialog
+          open={editOpen}
+          onOpenChange={handleEditOpenChange}
+          form={editForm}
+          mode="edit"
+          dialogClassName="operacoes-dialog"
+          contratos={contratoOptions}
+          motos={motoItems}
+          pecas={pecaItems}
+          tiposManutencao={tipoItems}
+          isSubmitting={updateManutencao.isPending}
+          isCreatingPeca={createPeca.isPending}
+          isCreatingTipoManutencao={createTipoManutencao.isPending}
+          onSubmit={onEditSubmit}
+          onCreatePeca={async (data) => {
+            try {
+              await createPeca.mutateAsync({
+                nome: data.nome,
+                descricao: data.descricao ?? "",
+              });
+              toast.success("Peça cadastrada com sucesso!");
+              await pecas.refetch();
+            } catch (error) {
+              toast.error(getErrorMessage(error, "Erro ao cadastrar peça"));
+              throw error;
+            }
+          }}
+          onCreateTipoManutencao={async (data) => {
+            try {
+              await createTipoManutencao.mutateAsync({
+                nome: data.nome,
+                descricao: data.descricao ?? "",
+                intervaloDiasPadrao: data.intervaloDiasPadrao,
+              });
+              toast.success("Tipo de manutenção cadastrado com sucesso!");
+              await tiposManutencao.refetch();
+            } catch (error) {
+              toast.error(getErrorMessage(error, "Erro ao cadastrar tipo de manutenção"));
+              throw error;
+            }
+          }}
+        />
+
+        <Card className="operacoes-section-card operacoes-filter-card">
           <CardHeader>
             <CardTitle className="text-base">Filtro inteligente</CardTitle>
             <CardDescription>Use este filtro para analisar um veículo específico ou toda a frota.</CardDescription>
           </CardHeader>
           <CardContent>
             <Select value={selectedMotoId} onValueChange={setSelectedMotoId}>
-              <SelectTrigger className="w-full md:w-96">
+              <SelectTrigger className="operacoes-filter-trigger w-full md:w-96">
                 <SelectValue placeholder="Filtrar por moto" />
               </SelectTrigger>
               <SelectContent>
@@ -349,35 +537,33 @@ export default function Manutencoes() {
           </CardHeader>
           <CardContent>
             {insights.latestPriceRows.length > 0 ? (
-              <div className="-mx-2 overflow-x-auto px-2">
-                <table className="w-full min-w-[1100px] text-sm">
+              <div className="operacoes-table-wrap">
+                <table className="operacoes-table w-full min-w-[1100px] text-sm">
                   <thead>
-                    <tr className="border-b">
-                      <th className="px-4 py-3 text-left font-medium">Moto</th>
-                      <th className="px-4 py-3 text-left font-medium">Peça</th>
-                      <th className="px-4 py-3 text-left font-medium">Última troca</th>
-                      <th className="px-4 py-3 text-left font-medium">Preço</th>
-                      <th className="px-4 py-3 text-left font-medium">Troca anterior</th>
-                      <th className="px-4 py-3 text-left font-medium">Dias entre trocas</th>
-                      <th className="px-4 py-3 text-left font-medium">Intervalo esperado</th>
-                      <th className="px-4 py-3 text-left font-medium">Status</th>
+                    <tr>
+                      <th>Moto</th>
+                      <th>Peça</th>
+                      <th>Última troca</th>
+                      <th>Preço</th>
+                      <th>Troca anterior</th>
+                      <th>Dias entre trocas</th>
+                      <th>Intervalo esperado</th>
+                      <th>Status</th>
                     </tr>
                   </thead>
                   <tbody>
                     {insights.latestPriceRows.map((row) => (
-                      <tr key={row.key} className="border-b hover:bg-gray-50">
-                        <td className="px-4 py-3">{row.motoLabel}</td>
-                        <td className="px-4 py-3">{row.partLabel}</td>
-                        <td className="px-4 py-3">{formatDateBR(row.lastDate)}</td>
-                        <td className="px-4 py-3 font-medium">{formatCurrencyBR(row.lastCost)}</td>
-                        <td className="px-4 py-3">{row.previousDate ? formatDateBR(row.previousDate) : "-"}</td>
-                        <td className="px-4 py-3">{row.daysBetweenChanges ?? "-"}</td>
-                        <td className="px-4 py-3">{row.intervalDays ? `${row.intervalDays} dias` : "-"}</td>
-                        <td className="px-4 py-3">
+                      <tr key={row.key}>
+                        <td data-label="Moto">{row.motoLabel}</td>
+                        <td data-label="Peça">{row.partLabel}</td>
+                        <td data-label="Última troca">{formatDateBR(row.lastDate)}</td>
+                        <td data-label="Preço" className="font-medium">{formatCurrencyBR(row.lastCost)}</td>
+                        <td data-label="Troca anterior">{row.previousDate ? formatDateBR(row.previousDate) : "-"}</td>
+                        <td data-label="Dias entre trocas">{row.daysBetweenChanges ?? "-"}</td>
+                        <td data-label="Intervalo esperado">{row.intervalDays ? `${row.intervalDays} dias` : "-"}</td>
+                        <td data-label="Status">
                           <span
-                            className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${
-                              row.isEarly ? "bg-red-100 text-red-700" : "bg-green-100 text-green-700"
-                            }`}
+                            className={`operacoes-status-chip ${row.isEarly ? "operacoes-status-chip--danger" : "operacoes-status-chip--success"}`}
                           >
                             {row.isEarly ? "Precoce" : "Dentro do previsto"}
                           </span>
@@ -388,7 +574,7 @@ export default function Manutencoes() {
                 </table>
               </div>
             ) : (
-              <div className="py-8 text-center text-muted-foreground">
+              <div className="operacoes-table-empty">
                 Nenhuma manutenção encontrada para este filtro.
               </div>
             )}
@@ -397,9 +583,12 @@ export default function Manutencoes() {
 
         <ManutencoesTable
           items={filteredManutencoes}
+          contratos={contratoItems}
           motos={motoItems}
           isLoading={manutencoes.isLoading}
+          onEdit={handleEdit}
           onDelete={handleDelete}
+          editPending={updateManutencao.isPending}
           deletePending={deleteManutencao.isPending}
         />
       </div>

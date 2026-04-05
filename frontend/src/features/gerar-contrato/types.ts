@@ -56,7 +56,7 @@ export interface ContratoHistoryItem {
   id: string;
   createdAt: string;
   titulo: string;
-  locador: LocadorData;
+  locadores: LocadorData[];
   locatario: LocatarioData;
   veiculo: VeiculoData;
   termos: ContratoTermos;

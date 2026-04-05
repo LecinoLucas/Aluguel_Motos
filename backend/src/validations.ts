@@ -109,23 +109,25 @@ export function calcularDiasAluguel(dataInicio: Date, dataFim: Date): number {
  * Calcular valor total do contrato
  */
 export function calcularValorTotal(
-  valorDiario: number,
+  valorSemanal: number,
   dataInicio: Date,
   dataFim: Date
 ): number {
   const dias = calcularDiasAluguel(dataInicio, dataFim);
-  return dias * valorDiario;
+  const semanas = Math.max(1, Math.ceil(dias / 7));
+  return semanas * valorSemanal;
 }
 
 /**
  * Calcular multa por atraso
  */
 export function calcularMultaAtraso(
-  valorDiario: number,
+  valorSemanal: number,
   diasAtraso: number
 ): number {
   const percentualMulta = 0.1; // 10% por dia de atraso
-  return valorDiario * diasAtraso * percentualMulta;
+  const valorBaseDiario = valorSemanal / 7;
+  return valorBaseDiario * diasAtraso * percentualMulta;
 }
 
 /**
@@ -195,14 +197,17 @@ export const createLocadorSchema = z.object({
 });
 
 export const createContratoSchema = z.object({
-  clienteId: z.number().int().positive(),
+  locadorIds: z.array(z.number().int().positive()).min(1, "Selecione ao menos um locador"),
+  locatarioId: z.number().int().positive(),
   motoId: z.number().int().positive(),
   dataInicio: z.coerce.date(),
   dataFim: z.coerce.date(),
-  valorDiario: z.number().positive("Valor diário deve ser positivo"),
+  valorSemanal: z.number().positive("Valor semanal deve ser positivo"),
+  diasAposFim: z.coerce.number().int().min(0, "Os dias devem ser zero ou mais"),
 });
 
 export const createManutencaoSchema = z.object({
+  contratoId: z.number().int().positive().optional(),
   motoId: z.number().int().positive(),
   peca: z.string().min(2, "Peça é obrigatória"),
   tipo: z.string().min(1, "Tipo de manutenção é obrigatório"),
@@ -237,11 +242,39 @@ export const createTipoManutencaoSchema = z.object({
     .optional(),
 });
 
+export const createPecaSchema = z.object({
+  nome: z.string().min(2, "Nome da peça é obrigatório"),
+  descricao: z.preprocess(
+    (value) => (value === "" ? undefined : value),
+    z.string().max(240, "Descrição muito longa").optional(),
+  ),
+});
+
 export const createPagamentoSchema = z.object({
-  contratoId: z.number().int().positive(),
+  contratoId: z.number().int().positive().optional(),
+  motoId: z.number().int().positive().optional(),
+  manutencaoId: z.number().int().positive().optional(),
+  tipo: z.enum(["receber", "pagar"]).default("receber"),
+  origem: z.enum(["manual", "contrato", "manutencao"]).default("manual"),
+  descricao: z.string().trim().optional(),
   valor: z.number().positive("Valor deve ser positivo"),
   data: z.coerce.date(),
   status: z.enum(["pendente", "pago", "atrasado"]),
+});
+
+export const createMultaSchema = z.object({
+  contratoId: z.number().int().positive(),
+  motoId: z.number().int().positive().optional(),
+  tipo: z.enum(["multa", "prejuizo"]),
+  responsavel: z.string().trim().min(2, "Informe quem gerou a ocorrência"),
+  descricao: z.string().trim().min(3, "Descreva a multa ou prejuízo"),
+  data: z.coerce.date(),
+  valor: z.number().positive("Valor deve ser positivo"),
+  status: z.enum(["pendente", "pago", "descontado_caucao"]),
+  observacao: z.preprocess(
+    (value) => (value === "" ? undefined : value),
+    z.string().trim().optional(),
+  ),
 });
 
 export const updateMotoSchema = z.object({
@@ -254,6 +287,7 @@ export const updateMotoSchema = z.object({
   chassi: z.string().refine(validarChassi, "Chassi inválido").optional(),
   renavam: z.string().refine(validarRenavam, "RENAVAM inválido").optional(),
   status: z.enum(["disponivel", "alugada", "manutencao"]).optional(),
+  disponibilidadeManual: z.enum(["automatico", "disponivel", "indisponivel"]).optional(),
 });
 
 export const updateClienteSchema = z.object({
@@ -287,13 +321,60 @@ export const updateLocadorSchema = z.object({
 });
 
 export const updateContratoSchema = z.object({
+  locadorIds: z.array(z.number().int().positive()).min(1, "Selecione ao menos um locador").optional(),
+  locatarioId: z.number().int().positive().optional(),
+  motoId: z.number().int().positive().optional(),
+  dataInicio: z.coerce.date().optional(),
   status: z.enum(["ativo", "encerrado", "cancelado"]).optional(),
   dataFim: z.coerce.date().optional(),
+  valorSemanal: z.number().positive("Valor semanal deve ser positivo").optional(),
+  diasAposFim: z.coerce.number().int().min(0, "Os dias devem ser zero ou mais").optional(),
 });
 
 export const updatePagamentoSchema = z.object({
+  contratoId: z.number().int().positive().nullable().optional(),
+  motoId: z.number().int().positive().optional(),
   status: z.enum(["pendente", "pago", "atrasado"]).optional(),
   valor: z.number().positive().optional().transform((v) => v?.toString()),
+  descricao: z.string().trim().optional(),
+  data: z.coerce.date().optional(),
+});
+
+export const updateManutencaoSchema = z.object({
+  contratoId: z.number().int().positive().nullable().optional(),
+  motoId: z.number().int().positive().optional(),
+  peca: z.string().min(2, "Peça é obrigatória").optional(),
+  tipo: z.string().min(1, "Tipo de manutenção é obrigatório").optional(),
+  data: z.coerce.date().optional(),
+  custo: z.number().positive("Custo deve ser positivo").optional(),
+  kmAtual: z
+    .preprocess(
+      (value) => (value === "" || value === null || value === undefined ? undefined : value),
+      z.coerce.number().int().positive().optional(),
+    )
+    .optional(),
+  intervaloDiasPrevisto: z
+    .preprocess(
+      (value) => (value === "" || value === null || value === undefined ? undefined : value),
+      z.coerce.number().int().positive().optional(),
+    )
+    .optional(),
+  descricao: z.string().optional(),
+});
+
+export const updateMultaSchema = z.object({
+  contratoId: z.number().int().positive().optional(),
+  motoId: z.number().int().positive().optional(),
+  tipo: z.enum(["multa", "prejuizo"]).optional(),
+  responsavel: z.string().trim().min(2, "Informe quem gerou a ocorrência").optional(),
+  descricao: z.string().trim().min(3, "Descreva a multa ou prejuízo").optional(),
+  data: z.coerce.date().optional(),
+  valor: z.number().positive("Valor deve ser positivo").optional(),
+  status: z.enum(["pendente", "pago", "descontado_caucao"]).optional(),
+  observacao: z.preprocess(
+    (value) => (value === "" ? undefined : value),
+    z.string().trim().optional(),
+  ),
 });
 
 export const updateTipoManutencaoSchema = z.object({
@@ -308,4 +389,12 @@ export const updateTipoManutencaoSchema = z.object({
       z.coerce.number().int().positive().optional(),
     )
     .optional(),
+});
+
+export const updatePecaSchema = z.object({
+  nome: z.string().min(2, "Nome da peça inválido").optional(),
+  descricao: z.preprocess(
+    (value) => (value === "" ? undefined : value),
+    z.string().max(240, "Descrição muito longa").optional(),
+  ),
 });

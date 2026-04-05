@@ -15,12 +15,16 @@ export async function getPagamentoById(id: number) {
   return result[0];
 }
 
-export async function listPagamentos(status?: string) {
+export async function listPagamentos(filters?: { status?: string; tipo?: string }) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   let query: any = db.select().from(pagamentos);
-  if (status) {
-    query = query.where(eq(pagamentos.status, status as any));
+  if (filters?.status && filters?.tipo) {
+    query = query.where(and(eq(pagamentos.status, filters.status as any), eq(pagamentos.tipo, filters.tipo as any)));
+  } else if (filters?.status) {
+    query = query.where(eq(pagamentos.status, filters.status as any));
+  } else if (filters?.tipo) {
+    query = query.where(eq(pagamentos.tipo, filters.tipo as any));
   }
   return query.orderBy(desc(pagamentos.createdAt));
 }
@@ -41,6 +45,13 @@ export async function getPagamentosByContrato(contratoId: number) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   return db.select().from(pagamentos).where(eq(pagamentos.contratoId, contratoId)).orderBy(desc(pagamentos.createdAt));
+}
+
+export async function getPagamentoByManutencaoId(manutencaoId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.select().from(pagamentos).where(eq(pagamentos.manutencaoId, manutencaoId)).limit(1);
+  return result[0];
 }
 
 export async function getPagamentosByPeriodo(dataInicio: Date, dataFim: Date) {

@@ -83,33 +83,40 @@ export function LocadoresTab({
         </div>
         <Dialog open={open} onOpenChange={onOpenChange}>
           <DialogTrigger asChild>
-            <Button className="w-full gap-2 sm:w-auto">
+            <Button className="cadastros-primary-button w-full gap-2 sm:w-auto">
               <Plus className="h-4 w-4" />
               {createLabel}
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
+          <DialogContent
+            overlayClassName="cadastros-dialog-overlay"
+            className="cadastros-dialog sm:max-w-2xl"
+          >
             <DialogHeader>
               <DialogTitle>{createDialogTitle}</DialogTitle>
               <DialogDescription>{createDialogDescription}</DialogDescription>
             </DialogHeader>
-            {locadorImport ? (
-              <div className="cadastro-import-grid">
-                <CadastroImportButton
-                  title="Importar documento do locador"
-                  description="Extrai identidade e endereço para preencher o cadastro mais rápido."
-                  fileName={locadorImport.fileName}
-                  isImporting={locadorImport.isImporting}
-                  onClick={locadorImport.onImportClick}
-                />
-              </div>
-            ) : null}
-            <CadastroErrorAlert title="Revise os dados do locador" messages={errorMessages} />
-            <LocadorFormFields form={form} errors={errors} onChange={onFormChange} />
-            <Button onClick={onCreate} disabled={isSubmitting} className="w-full">
-              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Salvar Locador
-            </Button>
+            <div className="cadastros-dialog__body">
+              {locadorImport ? (
+                <div className="cadastro-import-grid">
+                  <CadastroImportButton
+                    title="Importar documento do locador"
+                    description="Extrai identidade e endereço para preencher o cadastro mais rápido."
+                    fileName={locadorImport.fileName}
+                    isImporting={locadorImport.isImporting}
+                    onClick={locadorImport.onImportClick}
+                  />
+                </div>
+              ) : null}
+              <CadastroErrorAlert title="Revise os dados do locador" messages={errorMessages} />
+              <LocadorFormFields form={form} errors={errors} onChange={onFormChange} />
+            </div>
+            <div className="cadastros-dialog__footer">
+              <Button onClick={onCreate} disabled={isSubmitting} className="cadastros-primary-button w-full sm:w-auto">
+                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Salvar Locador
+              </Button>
+            </div>
           </DialogContent>
         </Dialog>
       </CardHeader>
@@ -118,41 +125,42 @@ export function LocadoresTab({
           title="Não foi possível carregar os locadores"
           messages={loadErrorMessage ? [loadErrorMessage] : []}
         />
-        <div className="mb-4">
+        <div className="cadastros-search-bar">
           <Input
+            className="cadastros-search-input"
             placeholder={searchPlaceholder}
             value={searchTerm}
             onChange={(e) => onSearchTermChange(e.target.value)}
           />
         </div>
         {isLoading ? (
-          <div className="flex items-center justify-center py-8">
+          <div className="cadastros-card-state">
             <Loader2 className="h-8 w-8 animate-spin" />
           </div>
         ) : (
-          <div className="-mx-2 overflow-x-auto px-2">
-            <table className="w-full min-w-[900px]">
+          <div className="cadastros-table-wrap">
+            <table className="cadastros-table w-full min-w-[900px]">
               <thead>
-                <tr className="border-b">
-                  <th className="px-4 py-3 text-left">Nome</th>
-                  <th className="px-4 py-3 text-left">CPF</th>
-                  <th className="px-4 py-3 text-left">RG</th>
-                  <th className="px-4 py-3 text-left">Telefone</th>
-                  <th className="px-4 py-3 text-left">Cidade/UF</th>
-                  <th className="px-4 py-3 text-left">Ações</th>
+                <tr>
+                  <th>Nome</th>
+                  <th>CPF</th>
+                  <th>RG</th>
+                  <th>Telefone</th>
+                  <th>Cidade/UF</th>
+                  <th>Ações</th>
                 </tr>
               </thead>
               <tbody>
                 {items.length > 0 ? (
                   items.map((item) => (
-                    <tr key={item.id} className="border-b hover:bg-gray-50">
-                      <td className="px-4 py-3">{item.nome}</td>
-                      <td className="px-4 py-3">{formatCpfDisplay(item.cpf)}</td>
-                      <td className="px-4 py-3">{formatRgDisplay(item.rg)}</td>
-                      <td className="px-4 py-3">{formatPhoneDisplay(item.telefone)}</td>
-                      <td className="px-4 py-3">{[item.cidade, item.estado].filter(Boolean).join(" / ") || "-"}</td>
-                      <td className="px-4 py-3">
-                        <div className="flex gap-1">
+                    <tr key={item.id}>
+                      <td data-label="Nome">{item.nome}</td>
+                      <td data-label="CPF">{formatCpfDisplay(item.cpf)}</td>
+                      <td data-label="RG">{formatRgDisplay(item.rg)}</td>
+                      <td data-label="Telefone">{formatPhoneDisplay(item.telefone)}</td>
+                      <td data-label="Cidade/UF">{[item.cidade, item.estado].filter(Boolean).join(" / ") || "-"}</td>
+                      <td data-label="Ações">
+                        <div className="cadastros-table-actions">
                           {showEditAction ? (
                             <Button variant="ghost" size="sm" onClick={() => onEdit(item)}>
                               <Edit2 className="h-4 w-4" />
@@ -167,7 +175,7 @@ export function LocadoresTab({
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
+                    <td colSpan={6} className="cadastros-table-empty">
                       {emptyMessage}
                     </td>
                   </tr>

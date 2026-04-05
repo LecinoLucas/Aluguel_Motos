@@ -10,11 +10,27 @@ export const dashboardRouter = router({
     return dashboardService.getReceitaMensal();
   }),
 
+  fluxoMensal: publicProcedure.query(async () => {
+    return dashboardService.getFluxoMensal();
+  }),
+
+  despesasPorOrigem: publicProcedure.query(async () => {
+    return dashboardService.getDespesasPorOrigem();
+  }),
+
+  rentabilidadePorMoto: publicProcedure.query(async () => {
+    return dashboardService.getRentabilidadePorMoto();
+  }),
+
   contratosProximosVencimento: publicProcedure.query(async () => {
     return dashboardService.getContratosProximosVencimento();
   }),
 
   pagamentosAtrasados: publicProcedure.query(async () => {
     return dashboardService.getPagamentosAtrasados();
+  }),
+
+  contasPagarAtrasadas: publicProcedure.query(async () => {
+    return dashboardService.getContasPagarAtrasadas();
   }),
 });

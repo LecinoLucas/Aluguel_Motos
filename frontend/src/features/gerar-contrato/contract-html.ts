@@ -4,11 +4,38 @@ import type {
   LocatarioData,
   VeiculoData,
 } from "./types";
+import { defaultLocador } from "./types";
 
 export function formatDateBR(dateStr: string): string {
   if (!dateStr) return "___/___/______";
   const [y, m, d] = dateStr.split("-");
   return `${d}/${m}/${y}`;
+}
+
+function parseMoneyValue(valor: string): number {
+  const raw = valor.trim();
+  if (!raw) return Number.NaN;
+
+  if (raw.includes(",")) {
+    return Number(raw.replace(/\./g, "").replace(",", "."));
+  }
+
+  const parts = raw.split(".");
+  if (parts.length > 2) {
+    return Number(parts.join(""));
+  }
+
+  return Number(raw);
+}
+
+function formatMoneyValue(valor: string): string {
+  const amount = parseMoneyValue(valor);
+  if (Number.isNaN(amount)) return valor;
+
+  return amount.toLocaleString("pt-BR", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
 }
 
 function formatDateExtenso(dateStr: string): string {
@@ -22,7 +49,7 @@ function formatDateExtenso(dateStr: string): string {
 }
 
 function valorPorExtenso(valor: string): string {
-  const num = parseFloat(valor.replace(/\./g, "").replace(",", "."));
+  const num = parseMoneyValue(valor);
   if (isNaN(num)) return valor;
   const inteiro = Math.floor(num);
   const centavos = Math.round((num - inteiro) * 100);
@@ -73,15 +100,43 @@ function valorPorExtenso(valor: string): string {
   return `${texto} reais e ${converterAte999(centavos)} centavos`;
 }
 
+function formatLocadorParagraph(locador: LocadorData, index: number, total: number) {
+  const label = total > 1 ? `LOCADOR ${index + 1}` : "LOCADOR";
+  return `<p style="text-align: justify;">
+    <strong>${label}: ${locador.nome.toUpperCase()}</strong>, ${locador.nacionalidade}, ${locador.estadoCivil}, inscrito no CPF sob o número ${locador.cpf}, RG n° ${locador.rg} ${locador.orgaoEmissor}, residente e domiciliado à ${locador.endereco}, ${locador.cidade}, ${locador.estado}, CEP ${locador.cep}. Telefone ${locador.telefone}.
+  </p>`;
+}
+
+function renderLocadoresParagraphs(locadores: LocadorData[]) {
+  return locadores.map((locador, index) => formatLocadorParagraph(locador, index, locadores.length)).join("\n");
+}
+
+function renderLocadoresSignatures(locadores: LocadorData[]) {
+  return locadores
+    .map(
+      (_, index) => `
+    <div style="text-align: center; width: 45%; min-width: 240px; margin-bottom: 24px;">
+      <div style="border-top: 1px solid #000; padding-top: 5px;">
+        <strong>${locadores.length > 1 ? `LOCADOR ${index + 1}` : "LOCADOR"}</strong>
+      </div>
+    </div>`,
+    )
+    .join("");
+}
+
 export function gerarContratoHTML(
-  locador: LocadorData,
+  locadores: LocadorData[],
   locatario: LocatarioData,
   veiculo: VeiculoData,
   termos: ContratoTermos,
 ): string {
+  const locadoresNormalizados = locadores.length > 0 ? locadores : [{ ...defaultLocador }];
+  const locadorPrincipal = locadoresNormalizados[0];
   const dataExtenso = formatDateExtenso(termos.dataContrato);
-  const valorSemanalExtenso = valorPorExtenso(termos.valorSemanal);
-  const valorCaucaoExtenso = valorPorExtenso(termos.valorCaucao);
+  const valorSemanalFormatado = formatMoneyValue(termos.valorSemanal);
+  const valorCaucaoFormatado = formatMoneyValue(termos.valorCaucao);
+  const valorSemanalExtenso = valorPorExtenso(valorSemanalFormatado);
+  const valorCaucaoExtenso = valorPorExtenso(valorCaucaoFormatado);
 
   return `
 <div style="font-family: 'Times New Roman', serif; max-width: 800px; margin: 0 auto; padding: 40px; line-height: 1.6; font-size: 14px; color: #000;">
@@ -89,9 +144,7 @@ export function gerarContratoHTML(
   
   <hr style="border: 1px solid #000; margin: 20px 0;" />
   
-  <p style="text-align: justify;">
-    <strong>LOCADOR: ${locador.nome.toUpperCase()}</strong>, ${locador.nacionalidade}, ${locador.estadoCivil}, inscrito no CPF sob o número ${locador.cpf}, RG n° ${locador.rg} ${locador.orgaoEmissor}, residente e domiciliado à ${locador.endereco}, ${locador.cidade}, ${locador.estado}, CEP ${locador.cep}. Telefone ${locador.telefone}.
-  </p>
+  ${renderLocadoresParagraphs(locadoresNormalizados)}
   
   <p style="text-align: justify;">
     <strong>LOCATÁRIO: ${locatario.nome.toUpperCase()}</strong>, ${locatario.nacionalidade}, ${locatario.estadoCivil}, inscrito no CPF sob o número ${locatario.cpf}, RG ${locatario.rg} ${locatario.orgaoEmissor}, residente e domiciliado à ${locatario.endereco}, ${locatario.cidade}, ${locatario.estado}, CEP ${locatario.cep}. Telefone: ${locatario.telefone}.
@@ -139,7 +192,7 @@ export function gerarContratoHTML(
   
   <p style="text-align: justify;">3.4. Usar o veículo apenas para transporte de comida por aplicativo e/ou transporte de passageiros, observando seu limite de capacidade, sendo conduzido apenas pelo piloto indicado no Demonstrativo do Contrato de Aluguel (ANEXO 1), sob pena de infração contratual (quebra de contrato) e perda das garantias do LOCADOR.</p>
   
-  <p style="text-align: justify;">3.6. Usar o veículo exclusivamente dentro da cidade de ${locador.cidade} e região metropolitana.</p>
+  <p style="text-align: justify;">3.6. Usar o veículo exclusivamente dentro da cidade de ${locadorPrincipal.cidade} e região metropolitana.</p>
   
   <p style="text-align: justify;">3.7. Comunicar ao LOCADOR imediatamente ocorrência de acidente, furto, roubo ou incêndio e providenciar Boletim de Ocorrência Policial ou Laudo Pericial, quando este se fizer necessário, no prazo máximo de 2 (dois) dias após o evento, sob pena de perda das garantias LOCADOR optada na contratação do aluguel, além de responsabilização pelas consequências do ocorrido.</p>
   
@@ -163,7 +216,7 @@ export function gerarContratoHTML(
   
   <p style="text-align: justify;">4. Configurar-se-á o uso indevido do veículo e infração contratual, com perda da proteção do LOCADOR e perda do valor total da caução, quando:</p>
   
-  <p style="text-align: justify; margin-left: 20px;">a) Ir com o veículo para fora da região metropolitana de ${locador.cidade}.</p>
+  <p style="text-align: justify; margin-left: 20px;">a) Ir com o veículo para fora da região metropolitana de ${locadorPrincipal.cidade}.</p>
   <p style="text-align: justify; margin-left: 20px;">b) em caso de acidente, furto, roubo ou colisão, tiver procedido com manifesto dolo ou culpa (imprudência, imperícia ou negligência), e/ou utilizado o veículo para fins diversos da destinação específica constante no Certificado de Registro e Licenciamento de veículo e/ou especificações do fabricante.</p>
   <p style="text-align: justify; margin-left: 20px;">c) entregar a direção do veículo a pessoa não indicada neste contrato ocasionará perda integral da caução e encerramento imediato do contrato.</p>
   <p style="text-align: justify; margin-left: 20px;">d) trafegar por vias públicas, rodovias e caminhos sem condições de tráfego e, em consequência, provocar danos ao veículo ou acidente com terceiro.</p>
@@ -196,12 +249,8 @@ export function gerarContratoHTML(
   
   <p style="text-align: center; margin-top: 30px;">${termos.localContrato}, ${dataExtenso}.</p>
   
-  <div style="display: flex; justify-content: space-between; margin-top: 60px;">
-    <div style="text-align: center; width: 45%;">
-      <div style="border-top: 1px solid #000; padding-top: 5px;">
-        <strong>LOCADOR</strong>
-      </div>
-    </div>
+  <div style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 20px; margin-top: 60px;">
+    ${renderLocadoresSignatures(locadoresNormalizados)}
     <div style="text-align: center; width: 45%;">
       <div style="border-top: 1px solid #000; padding-top: 5px;">
         <strong>LOCATÁRIO/MOTORISTA</strong>
@@ -221,7 +270,7 @@ export function gerarContratoHTML(
   
   <p style="text-align: justify;">Este demonstrativo é parte integrante do CONTRATO PARTICULAR DE LOCAÇÃO DE MOTOCICLETA, firmado entre:</p>
   
-  <p style="text-align: justify;"><strong>LOCADOR: ${locador.nome.toUpperCase()}</strong>, ${locador.nacionalidade}, ${locador.estadoCivil}, inscrito no CPF sob o número ${locador.cpf}, RG n° ${locador.rg} ${locador.orgaoEmissor}, residente e domiciliado à ${locador.endereco}, ${locador.cidade}, ${locador.estado}, CEP ${locador.cep}. Telefone ${locador.telefone}.</p>
+  ${renderLocadoresParagraphs(locadoresNormalizados)}
   
   <p style="text-align: justify;"><strong>LOCATÁRIO: ${locatario.nome.toUpperCase()}</strong>, ${locatario.nacionalidade}, ${locatario.estadoCivil}, inscrito no CPF sob o número ${locatario.cpf}, RG ${locatario.rg} ${locatario.orgaoEmissor}, residente e domiciliado à ${locatario.endereco}, ${locatario.cidade}, ${locatario.estado}, CEP ${locatario.cep}. Telefone: ${locatario.telefone}.</p>
   
@@ -237,10 +286,10 @@ export function gerarContratoHTML(
     <strong>RENAVAM:</strong> ${veiculo.renavam}
   </p>
   
-  <p style="text-align: justify; margin-top: 20px;"><strong>CHEQUE CAUÇÃO:</strong> R$ ${termos.valorCaucao} (${valorCaucaoExtenso}), devolvido após 30 dias da entrega da motocicleta com o checklist final, caso não exista avarias ou multas, o valor será devolvido integralmente. Caso o locatário deseje entregar a motocicleta antes do final do contrato, ou deixar por mais de 24h de pagar o valor semanal, será cobrado o valor de R$${termos.valorCaucao} (${valorCaucaoExtenso}) referente a multa de quebra contratual ensejando na entrega da Motocicleta ao LOCADOR.</p>
+  <p style="text-align: justify; margin-top: 20px;"><strong>CHEQUE CAUÇÃO:</strong> R$ ${valorCaucaoFormatado} (${valorCaucaoExtenso}), devolvido após 30 dias da entrega da motocicleta com o checklist final, caso não exista avarias ou multas, o valor será devolvido integralmente. Caso o locatário deseje entregar a motocicleta antes do final do contrato, ou deixar por mais de 24h de pagar o valor semanal, será cobrado o valor de R$${valorCaucaoFormatado} (${valorCaucaoExtenso}) referente a multa de quebra contratual ensejando na entrega da Motocicleta ao LOCADOR.</p>
   
-  <p><strong>VALOR DO ALUGUEL SEMANAL:</strong> R$ ${termos.valorSemanal} (${valorSemanalExtenso}).</p>
-  <p><strong>FORMA DE PAGAMENTO:</strong> R$ ${termos.valorSemanal} (${valorSemanalExtenso}), ${termos.formaPagamento}.</p>
+  <p><strong>VALOR DO ALUGUEL SEMANAL:</strong> R$ ${valorSemanalFormatado} (${valorSemanalExtenso}).</p>
+  <p><strong>FORMA DE PAGAMENTO:</strong> R$ ${valorSemanalFormatado} (${valorSemanalExtenso}), ${termos.formaPagamento}.</p>
   <p><strong>PRAZO DE LOCAÇÃO:</strong> de ${formatDateBR(termos.dataInicio)} a ${formatDateBR(termos.dataFim)}</p>
   
   <p style="margin-top: 15px;"><strong>Nome do motorista que utilizará este veículo:</strong> ${locatario.nome.toUpperCase()} <strong>CNH:</strong> ${locatario.cnh}.</p>
@@ -249,8 +298,8 @@ export function gerarContratoHTML(
   
   <p style="text-align: center; margin-top: 20px;">${termos.localContrato}, ${dataExtenso}.</p>
   
-  <div style="display: flex; justify-content: space-between; margin-top: 60px;">
-    <div style="text-align: center; width: 45%;"><div style="border-top: 1px solid #000; padding-top: 5px;"><strong>LOCADOR</strong></div></div>
+  <div style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 20px; margin-top: 60px;">
+    ${renderLocadoresSignatures(locadoresNormalizados)}
     <div style="text-align: center; width: 45%;"><div style="border-top: 1px solid #000; padding-top: 5px;"><strong>LOCATÁRIO/MOTORISTA</strong></div></div>
   </div>
   

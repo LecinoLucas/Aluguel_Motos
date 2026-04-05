@@ -1,23 +1,35 @@
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { ClienteListItem, LocadorListItem, MotoListItem } from "@/lib/trpc-types";
+import { Plus, Trash2 } from "lucide-react";
 import type { LocadorData, LocatarioData, VeiculoData } from "../types";
 import { LabeledInput } from "./LabeledInput";
 
+interface LocadorDraft {
+  id: string;
+  cadastroId: number | null;
+  data: LocadorData;
+}
+
 interface FormularioContratoTabProps {
-  locador: LocadorData;
+  locadoresContrato: LocadorDraft[];
   locatario: LocatarioData;
   veiculo: VeiculoData;
-  locadorSelecionado: string;
+  selectedLocadorIds: string[];
   locatarioSelecionado: string;
   motoSelecionada: string;
-  locadores: LocadorListItem[];
+  locadoresDisponiveis: LocadorListItem[];
   locatarios: ClienteListItem[];
   motos: MotoListItem[];
-  onSelectLocador: (value: string) => void;
+  onToggleLocador: (value: string, checked: boolean) => void;
+  onAddManualLocador: () => void;
+  onRemoveLocador: (draftId: string) => void;
   onSelectLocatario: (value: string) => void;
   onSelectMoto: (value: string) => void;
-  onUpdateLocador: (field: keyof LocadorData, value: string) => void;
+  onUpdateLocador: (draftId: string, field: keyof LocadorData, value: string) => void;
   onUpdateLocatario: (field: keyof LocatarioData, value: string) => void;
   onUpdateVeiculo: (field: keyof VeiculoData, value: string) => void;
 }
@@ -52,22 +64,29 @@ const locatarioFields: Array<{ key: keyof LocatarioData; label: string; placehol
 ];
 
 export function FormularioContratoTab({
-  locador,
+  locadoresContrato,
   locatario,
   veiculo,
-  locadorSelecionado,
+  selectedLocadorIds,
   locatarioSelecionado,
   motoSelecionada,
-  locadores,
+  locadoresDisponiveis,
   locatarios,
   motos,
-  onSelectLocador,
+  onToggleLocador,
+  onAddManualLocador,
+  onRemoveLocador,
   onSelectLocatario,
   onSelectMoto,
   onUpdateLocador,
   onUpdateLocatario,
   onUpdateVeiculo,
 }: FormularioContratoTabProps) {
+  const resumoLocadores =
+    locadoresContrato.length > 0
+      ? locadoresContrato.map((item) => item.data.nome || "Locador sem nome").join(", ")
+      : "-";
+
   return (
     <Card className="contract-section-card">
       <CardHeader>
@@ -76,29 +95,51 @@ export function FormularioContratoTab({
           Selecione os cadastros já preenchidos nas telas de locadores, clientes e motos, e complemente manualmente só o que faltar.
         </p>
       </CardHeader>
-      <CardContent className="space-y-6">
+      <CardContent className="contract-form-card space-y-6">
         <div className="contract-selector-grid">
-          <div className="md:col-span-2">
-            <label className="text-sm font-medium">Selecionar locador cadastrado</label>
-            <Select value={locadorSelecionado} onValueChange={onSelectLocador}>
-              <SelectTrigger className="mt-1">
-                <SelectValue placeholder="Selecione um locador" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="manual">Preencher manualmente</SelectItem>
-                {locadores.map((item) => (
-                  <SelectItem key={item.id} value={item.id.toString()}>
-                    {item.nome} ({item.cpf})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="contract-summary-card md:col-span-2 space-y-3">
+            <div className="space-y-1">
+              <p className="text-sm font-semibold">Locadores do contrato</p>
+              <p className="text-sm text-muted-foreground">
+                Marque quantos locadores quiser e adicione extras manualmente quando precisar.
+              </p>
+            </div>
+
+            <div className="grid gap-2">
+              {locadoresDisponiveis.length > 0 ? (
+                locadoresDisponiveis.map((item) => {
+                  const inputId = `gerar-contrato-locador-${item.id}`;
+                  return (
+                    <div key={item.id} className="flex items-start gap-3 rounded-md border border-border/60 bg-background/70 px-3 py-2">
+                      <Checkbox
+                        id={inputId}
+                        checked={selectedLocadorIds.includes(item.id.toString())}
+                        onCheckedChange={(checked) => onToggleLocador(item.id.toString(), Boolean(checked))}
+                      />
+                      <Label htmlFor={inputId} className="flex-1 cursor-pointer items-start">
+                        <span className="flex flex-col gap-1 leading-snug">
+                          <span>{item.nome}</span>
+                          <span className="text-xs font-normal text-muted-foreground">{item.cpf}</span>
+                        </span>
+                      </Label>
+                    </div>
+                  );
+                })
+              ) : (
+                <p className="text-sm text-muted-foreground">Nenhum locador cadastrado no momento.</p>
+              )}
+            </div>
+
+            <Button type="button" variant="outline" className="contract-outline-button gap-2" onClick={onAddManualLocador}>
+              <Plus className="h-4 w-4" />
+              Adicionar locador manual
+            </Button>
           </div>
 
           <div className="md:col-span-2">
-            <label className="text-sm font-medium">Selecionar locatário cadastrado</label>
+            <label className="contract-selector-label">Selecionar locatário cadastrado</label>
             <Select value={locatarioSelecionado} onValueChange={onSelectLocatario}>
-              <SelectTrigger className="mt-1">
+              <SelectTrigger className="contract-select-trigger mt-1">
                 <SelectValue placeholder="Selecione um locatário" />
               </SelectTrigger>
               <SelectContent>
@@ -113,9 +154,9 @@ export function FormularioContratoTab({
           </div>
 
           <div className="md:col-span-2">
-            <label className="text-sm font-medium">Selecionar veículo cadastrado</label>
+            <label className="contract-selector-label">Selecionar veículo cadastrado</label>
             <Select value={motoSelecionada} onValueChange={onSelectMoto}>
-              <SelectTrigger className="mt-1">
+              <SelectTrigger className="contract-select-trigger mt-1">
                 <SelectValue placeholder="Selecione um veículo" />
               </SelectTrigger>
               <SelectContent>
@@ -130,8 +171,7 @@ export function FormularioContratoTab({
           </div>
 
           <div className="contract-summary-card md:col-span-2">
-            <p><strong>Locador:</strong> {locador.nome || "-"}</p>
-            <p><strong>CPF Locador:</strong> {locador.cpf || "-"}</p>
+            <p><strong>Locadores:</strong> {resumoLocadores}</p>
             <p><strong>Locatário:</strong> {locatario.nome || "-"}</p>
             <p><strong>CPF Locatário:</strong> {locatario.cpf || "-"}</p>
             <p><strong>Veículo:</strong> {[veiculo.marca, veiculo.modelo, veiculo.placa].filter(Boolean).join(" - ") || "-"}</p>
@@ -139,24 +179,42 @@ export function FormularioContratoTab({
         </div>
 
         <div className="contract-form-sections">
-          <section className="contract-form-section">
-            <div className="contract-form-section__header">
-              <h3 className="text-base font-semibold">Dados do Locador</h3>
-              <p className="text-sm text-muted-foreground">Selecione um locador já cadastrado ou ajuste manualmente os dados do contrato.</p>
-            </div>
-            <div className="contract-form-grid">
-              {locadorFields.map((field) => (
-                <LabeledInput
-                  key={field.key}
-                  label={field.label}
-                  value={locador[field.key]}
-                  onChange={(value) => onUpdateLocador(field.key, value)}
-                  placeholder={field.placeholder}
-                  className={field.className || ""}
-                />
-              ))}
-            </div>
-          </section>
+          {locadoresContrato.map((locador, index) => (
+            <section key={locador.id} className="contract-form-section">
+              <div className="contract-form-section__header flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <h3 className="text-base font-semibold">Dados do Locador {index + 1}</h3>
+                  <p className="text-sm text-muted-foreground">
+                    {locador.cadastroId
+                      ? "Dados trazidos do cadastro e liberados para ajustes específicos deste contrato."
+                      : "Preencha manualmente quando o locador ainda não estiver cadastrado."}
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="contract-ghost-button gap-2 self-start"
+                  onClick={() => onRemoveLocador(locador.id)}
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Remover
+                </Button>
+              </div>
+              <div className="contract-form-grid">
+                {locadorFields.map((field) => (
+                  <LabeledInput
+                    key={`${locador.id}-${field.key}`}
+                    label={field.label}
+                    value={locador.data[field.key]}
+                    onChange={(value) => onUpdateLocador(locador.id, field.key, value)}
+                    placeholder={field.placeholder}
+                    className={field.className || ""}
+                  />
+                ))}
+              </div>
+            </section>
+          ))}
 
           <section className="contract-form-section">
             <div className="contract-form-section__header">
