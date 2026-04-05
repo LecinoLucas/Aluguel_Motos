@@ -4,10 +4,15 @@
   "scripts": {
     "dev": "./run-dev.sh",
     "dev:full": "./run-dev.sh --full",
-    "dev:backend": "cd moto-rental-backend && npm run dev",
-    "dev:frontend": "cd moto-rental-frontend && npm run dev",
-    "build": "npm run build:backend && npm run build:frontend",
-    "build:backend": "cd moto-rental-backend && npm run build",
-    "build:frontend": "cd moto-rental-frontend && npm run build"
+    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "cd frontend && npm run dev",
+    "build": "npm run build:backend",
+    "build:backend": "cd backend && npm run build",
+    "build:frontend": "cd frontend && npm run build",
+    "build:all": "npm run build:backend && npm run build:frontend",
+    "check": "npm run check:backend && npm run check:frontend",
+    "check:backend": "cd backend && npm run check",
+    "check:frontend": "cd frontend && npm run check",
+    "test": "cd backend && npm run test"
   }
 }

@@ -7,12 +7,13 @@ dist/
 .env.local
 .env.*.local
 
-moto-rental-backend/node_modules/
-moto-rental-backend/dist/
-moto-rental-backend/.env
+backend/node_modules/
+backend/dist/
+backend/.env
 
-moto-rental-frontend/node_modules/
-moto-rental-frontend/dist/
+frontend/node_modules/
+frontend/dist/
+frontend/.manus-logs/
 
 *.log
 pnpm-debug.log*

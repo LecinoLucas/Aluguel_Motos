@@ -3,8 +3,8 @@
 set -euo pipefail
 
 SCRIPT_DIR=$(cd -- "$(dirname -- "$0")" && pwd)
-BACKEND_DIR="$SCRIPT_DIR/moto-rental-backend"
-FRONTEND_DIR="$SCRIPT_DIR/moto-rental-frontend"
+BACKEND_DIR="$SCRIPT_DIR/backend"
+FRONTEND_DIR="$SCRIPT_DIR/frontend"
 FULL_RESET=false
 
 if [[ "${1:-}" == "--full" ]]; then
