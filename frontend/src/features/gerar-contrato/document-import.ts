@@ -37,6 +37,10 @@ const ufPorSigla: Record<string, string> = {
   TO: "Tocantins",
 };
 
+const siglaPorEstado = Object.fromEntries(
+  Object.entries(ufPorSigla).map(([sigla, estado]) => [estado.toUpperCase(), sigla]),
+) as Record<string, string>;
+
 const OCR_TEXT_MIN_LENGTH = 80;
 const PDF_OCR_PAGE_LIMIT = 3;
 const OCR_ROTATIONS = [0, 90, 270, 180];
@@ -274,7 +278,7 @@ function findBestCidadeUfMatch(lines: string[]) {
 
 function formatState(ufOrState: string): string {
   const value = ufOrState.trim().toUpperCase();
-  return ufPorSigla[value] || ufOrState.trim();
+  return siglaPorEstado[value] || (ufPorSigla[value] ? value : ufOrState.trim());
 }
 
 function formatOrgaoEmissor(value: string): string {

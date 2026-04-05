@@ -52,8 +52,6 @@ export function applyLocatarioComprovanteImport(
 ): LocatarioFormData {
   return {
     ...form,
-    nome: form.nome || fields.nome || "",
-    cpf: form.cpf || fields.cpf || "",
     endereco: fields.endereco || form.endereco,
     cidade: fields.cidade || form.cidade,
     estado: fields.estado || form.estado,

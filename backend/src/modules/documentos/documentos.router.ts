@@ -3,8 +3,8 @@ import { documentImportInputSchema } from "./documentos.schemas";
 import * as documentosService from "./documentos.service";
 
 export const documentosRouter = router({
-  available: publicProcedure.query(() => {
-    return { available: documentosService.isDocumentExtractionAvailable() };
+  available: publicProcedure.query(async () => {
+    return documentosService.getDocumentExtractionAvailability();
   }),
 
   extrair: protectedProcedure

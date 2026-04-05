@@ -3,6 +3,10 @@ import { ENV } from "../../_core/env";
 import { invokeLLM } from "../../_core/llm";
 import { storagePut } from "../../storage";
 import { documentImportInputSchema, extractedFieldsSchema, type DocumentImportInput } from "./documentos.schemas";
+import {
+  extractDocumentLocally,
+  getLocalDocumentExtractionAvailability,
+} from "./documentos.local";
 
 function getDocumentExtractionPrompt(kind: DocumentImportInput["kind"]) {
   const common = [
@@ -20,15 +24,15 @@ function getDocumentExtractionPrompt(kind: DocumentImportInput["kind"]) {
   ].join(" ");
 
   if (kind === "locador") {
-    return `${common} O documento pertence ao LOCADOR (proprietário da moto). Extraia: nome completo, CPF (validar 11 dígitos), RG, órgão emissor (ex: SSP/GO, DETRAN/SP), telefone com DDD, endereço completo, cidade, estado (por extenso, não sigla), CEP. Se for CNH + comprovante juntos, extraia de ambos.`;
+    return `${common} O documento pertence ao LOCADOR (proprietário da moto). Extraia: nome completo, CPF (validar 11 dígitos), RG, órgão emissor (ex: SSP/GO, DETRAN/SP), telefone com DDD, endereço completo, cidade, estado em sigla UF (ex: GO, SP), CEP. Se for CNH + comprovante juntos, extraia de ambos.`;
   }
 
   if (kind === "cnh") {
-    return `${common} O documento é uma CNH (Carteira Nacional de Habilitação) do LOCATÁRIO. Extraia: nome completo do condutor, CPF, RG, órgão emissor com UF (ex: SSP/GO), estado por extenso quando puder ser inferido do órgão emissor/UF, nº de registro da CNH (campo \"Nº REGISTRO\" com 11 dígitos), telefone se existir. ATENÇÃO: o número de registro da CNH é diferente do CPF, não confunda com datas, validade, emissão, código de segurança ou números soltos do documento.`;
+    return `${common} O documento é uma CNH (Carteira Nacional de Habilitação) do LOCATÁRIO. Extraia: nome completo do condutor, CPF, RG, órgão emissor com UF (ex: SSP/GO), estado em sigla UF quando puder ser inferido do órgão emissor/UF, nº de registro da CNH (campo "Nº REGISTRO" com 11 dígitos), telefone se existir. ATENÇÃO: o número de registro da CNH é diferente do CPF, não confunda com datas, validade, emissão, código de segurança ou números soltos do documento.`;
   }
 
   if (kind === "comprovante") {
-    return `${common} O documento é um comprovante de residência (conta de luz, água, telefone, etc.) do LOCATÁRIO. Extraia: nome do titular, CPF se aparecer, endereço completo (logradouro, número, complemento, bairro), cidade, estado (por extenso), CEP, telefone se aparecer. Priorize dados do titular/cliente e do local de consumo. Ignore dados da concessionária, agência, unidade consumidora, medidor, código de barras, valores e datas de vencimento.`;
+    return `${common} O documento é um comprovante de residência (conta de luz, água, telefone, etc.) do LOCATÁRIO. Extraia: nome do titular, CPF se aparecer, endereço completo (logradouro, número, complemento, bairro), cidade, estado em sigla UF (ex: GO, SP), CEP, telefone se aparecer. Priorize dados do titular/cliente e do local de consumo. Ignore dados da concessionária, agência, unidade consumidora, medidor, código de barras, valores e datas de vencimento.`;
   }
 
   return `${common} O documento é um CRLV/CRV (Certificado de Registro e Licenciamento de Veículo) de uma motocicleta. Extraia: marca (fabricante), modelo (nome do modelo), ano fabricação/modelo no formato AAAA/AAAA, cor predominante, placa, chassi (exatos 17 caracteres), RENAVAM (9-11 dígitos).`;
@@ -190,14 +194,58 @@ async function extractWithOpenAI(input: DocumentImportInput) {
   };
 }
 
-export function isDocumentExtractionAvailable() {
+function hasRemoteDocumentExtraction() {
   return Boolean((ENV.forgeApiUrl && ENV.forgeApiKey) || ENV.openaiApiKey);
+}
+
+export async function getDocumentExtractionAvailability() {
+  const local = await getLocalDocumentExtractionAvailability();
+  const remote = hasRemoteDocumentExtraction();
+
+  return {
+    available: local.available || remote,
+    pdf: local.pdf || remote,
+    image: local.image || remote,
+    ocr: local.ocr || remote,
+    local: local.available,
+    remote,
+  };
 }
 
 export async function extractDocument(input: DocumentImportInput) {
   const parsedInput = documentImportInputSchema.parse(input);
 
+  const localAvailability = await getLocalDocumentExtractionAvailability();
+  let localResult:
+    | {
+        fields: ReturnType<typeof sanitizeExtractedFields>;
+        source: "poppler" | "ocr" | "hybrid";
+      }
+    | null = null;
+
+  const supportsLocalExtraction =
+    (parsedInput.mimeType === "application/pdf" && localAvailability.pdf) ||
+    (parsedInput.mimeType.startsWith("image/") && localAvailability.image);
+
+  if (supportsLocalExtraction) {
+    localResult = await extractDocumentLocally(parsedInput, localAvailability);
+    if (Object.values(localResult.fields).some((value) => value.trim())) {
+      return localResult;
+    }
+  }
+
   if (!ENV.forgeApiUrl || !ENV.forgeApiKey) {
+    if (!ENV.openaiApiKey) {
+      if (localResult) {
+        return localResult;
+      }
+
+      throw new TRPCError({
+        code: "PRECONDITION_FAILED",
+        message: "Nenhum extrator de documentos está disponível no backend local.",
+      });
+    }
+
     return extractWithOpenAI(parsedInput);
   }
 

@@ -120,7 +120,7 @@ export const IMPORT_FIELD_LABELS: Record<keyof ExtractedDocumentFields, string> 
 export const IMPORT_FIELD_ORDER: Record<ImportKind, (keyof ExtractedDocumentFields)[]> = {
   locador: ["nome", "cpf", "rg", "orgaoEmissor", "telefone", "endereco", "cidade", "estado", "cep"],
   cnh: ["nome", "cpf", "rg", "orgaoEmissor", "estado", "telefone", "cnh"],
-  comprovante: ["nome", "cpf", "telefone", "endereco", "cidade", "estado", "cep"],
+  comprovante: ["telefone", "endereco", "cidade", "estado", "cep"],
   crlv: ["marca", "modelo", "ano", "cor", "placa", "chassi", "renavam"],
 };
 
