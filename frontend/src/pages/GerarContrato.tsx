@@ -212,8 +212,8 @@ export default function GerarContrato() {
           </Card>
         ) : (
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <div className="-mx-1 overflow-x-auto px-1 pb-1">
-              <TabsList className="grid min-w-[560px] grid-cols-3">
+            <div className="contract-tabs-shell -mx-1 overflow-x-auto px-1 pb-1">
+              <TabsList className="contract-tabs-list grid min-w-[560px] grid-cols-3">
                 <TabsTrigger value="formulario">Formulário</TabsTrigger>
                 <TabsTrigger value="termos">Contrato</TabsTrigger>
                 <TabsTrigger value="historico">Histórico</TabsTrigger>

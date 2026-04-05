@@ -15,9 +15,9 @@ export function ContratoPageHeader({
   return (
     <div className="contract-page-header">
       <div>
-        <p className="text-xs font-semibold uppercase tracking-[0.24em] text-primary/80">Contrato inteligente</p>
-        <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Gerar Contrato</h1>
-        <p className="mt-2 max-w-2xl text-sm text-muted-foreground sm:text-base">
+        <div className="contract-page-header__eyebrow">Contrato inteligente</div>
+        <h1 className="contract-page-header__title">Gerar Contrato</h1>
+        <p className="contract-page-header__subtitle">
           Monte contratos com cadastro existente, importação de documentos e revisão antes do preenchimento.
         </p>
       </div>

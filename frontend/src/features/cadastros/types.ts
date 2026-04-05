@@ -39,13 +39,21 @@ export interface VeiculoFormData {
   renavam: string;
 }
 
+export interface TipoManutencaoFormData {
+  nome: string;
+  descricao: string;
+  intervaloDiasPadrao: string;
+}
+
 export type LocadorField = keyof LocadorFormData;
 export type LocatarioField = keyof LocatarioFormData;
 export type VeiculoField = keyof VeiculoFormData;
+export type TipoManutencaoField = keyof TipoManutencaoFormData;
 
 export type LocadorFormErrors = Partial<Record<LocadorField, string>>;
 export type LocatarioFormErrors = Partial<Record<LocatarioField, string>>;
 export type VeiculoFormErrors = Partial<Record<VeiculoField, string>>;
+export type TipoManutencaoFormErrors = Partial<Record<TipoManutencaoField, string>>;
 
 export interface LocadorRecord extends LocadorFormData {
   id: number;
@@ -66,6 +74,13 @@ export interface VeiculoRecord {
   chassi?: string | null;
   renavam?: string | null;
   status: string;
+}
+
+export interface TipoManutencaoRecord {
+  id: number;
+  nome: string;
+  descricao?: string | null;
+  intervaloDiasPadrao?: number | null;
 }
 
 export const defaultLocadorForm: LocadorFormData = {
@@ -107,4 +122,10 @@ export const defaultVeiculoForm: VeiculoFormData = {
   cor: "",
   chassi: "",
   renavam: "",
+};
+
+export const defaultTipoManutencaoForm: TipoManutencaoFormData = {
+  nome: "",
+  descricao: "",
+  intervaloDiasPadrao: "",
 };

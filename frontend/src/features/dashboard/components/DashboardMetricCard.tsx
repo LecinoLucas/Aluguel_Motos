@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, type LucideIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface DashboardMetricCardProps {
   title: string;
@@ -19,10 +20,12 @@ export function DashboardMetricCard({
   isLoading,
 }: DashboardMetricCardProps) {
   return (
-    <Card className={`border-l-4 ${accentClassName}`}>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+    <Card className={cn("dashboard-metric-card border-l-4", accentClassName)}>
+      <CardHeader className="dashboard-metric-card__header">
         <CardTitle className="text-sm font-medium">{title}</CardTitle>
-        <Icon className="h-4 w-4" />
+        <div className="dashboard-metric-card__icon">
+          <Icon className="h-4 w-4" />
+        </div>
       </CardHeader>
       <CardContent>
         {isLoading ? (

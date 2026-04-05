@@ -6,13 +6,52 @@
   }
 
   .dashboard-hero {
-    @apply rounded-2xl border px-5 py-5 shadow-sm sm:px-6;
+    @apply relative overflow-hidden rounded-3xl border px-5 py-5 shadow-sm sm:px-6;
     background:
-      radial-gradient(circle at top right, color-mix(in oklab, var(--color-primary) 12%, transparent), transparent 34%),
+      radial-gradient(circle at top right, color-mix(in oklab, var(--color-primary) 14%, transparent), transparent 34%),
+      radial-gradient(circle at bottom left, color-mix(in oklab, var(--color-teal-500) 8%, transparent), transparent 24%),
       linear-gradient(180deg, color-mix(in oklab, var(--color-card) 96%, white), var(--color-card));
   }
 
+  .dashboard-hero::after {
+    content: "";
+    @apply pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent;
+  }
+
+  .dashboard-hero__eyebrow {
+    @apply inline-flex w-fit items-center rounded-full border bg-background/70 px-3 py-1 text-xs font-medium text-muted-foreground shadow-sm backdrop-blur;
+  }
+
+  .dashboard-hero__title {
+    @apply text-2xl font-semibold tracking-tight text-foreground sm:text-4xl;
+  }
+
+  .dashboard-hero__subtitle {
+    @apply mt-3 max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base;
+  }
+
+  .dashboard-hero__meta {
+    @apply mt-4 flex flex-wrap items-center gap-2 text-xs text-muted-foreground;
+  }
+
+  .dashboard-metric-card {
+    @apply border bg-card/90 shadow-sm transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-md;
+  }
+
+  .dashboard-metric-card__header {
+    @apply flex flex-row items-center justify-between space-y-0 pb-2;
+  }
+
+  .dashboard-metric-card__icon {
+    @apply flex h-8 w-8 items-center justify-center rounded-full bg-muted/70;
+  }
+
+  .dashboard-chart-card,
+  .dashboard-alert-card {
+    @apply border bg-card/90 shadow-sm;
+  }
+
   .dashboard-alert-item {
-    @apply rounded-lg border p-3 text-sm;
+    @apply rounded-xl border px-3 py-3 text-sm shadow-sm transition-colors;
   }
 }

@@ -30,9 +30,12 @@ describe("manutencoes.service", () => {
     await expect(
       createManutencao({
         motoId: 4,
+        peca: "Filtro de óleo",
         tipo: "preventiva",
         data: new Date("2024-03-10"),
         custo: 320,
+        kmAtual: 15200,
+        intervaloDiasPrevisto: 30,
         descricao: "Troca de oleo",
       }),
     ).rejects.toMatchObject({
@@ -50,18 +53,24 @@ describe("manutencoes.service", () => {
     await expect(
       createManutencao({
         motoId: 4,
+        peca: "Filtro de óleo",
         tipo: "preventiva",
         data,
         custo: 320.5,
+        kmAtual: 15200,
+        intervaloDiasPrevisto: 30,
         descricao: "Troca de oleo",
       }),
     ).resolves.toEqual({ success: true });
 
     expect(manutencoesRepository.createManutencao).toHaveBeenCalledWith({
       motoId: 4,
+      peca: "Filtro de óleo",
       tipo: "preventiva",
       data,
       custo: "320.5",
+      kmAtual: 15200,
+      intervaloDiasPrevisto: 30,
       descricao: "Troca de oleo",
     });
     expect(motosRepository.updateMoto).toHaveBeenCalledWith(4, { status: "manutencao" });

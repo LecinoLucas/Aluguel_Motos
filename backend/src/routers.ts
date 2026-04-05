@@ -5,6 +5,7 @@ import { dashboardRouter } from "./modules/dashboard/dashboard.router";
 import { documentosRouter } from "./modules/documentos/documentos.router";
 import { manutencoesRouter } from "./modules/manutencoes/manutencoes.router";
 import { pagamentosRouter } from "./modules/pagamentos/pagamentos.router";
+import { tiposManutencaoRouter } from "./modules/tipos-manutencao/tipos-manutencao.router";
 import { systemRouter } from "./_core/systemRouter";
 import { clientesRouter } from "./modules/clientes/clientes.router";
 import { locadoresRouter } from "./modules/locadores/locadores.router";
@@ -40,6 +41,9 @@ export const appRouter = router({
 
   // ==================== MANUTENÇÕES ====================
   manutencoes: manutencoesRouter,
+
+  // ==================== TIPOS DE MANUTENÇÃO ====================
+  tiposManutencao: tiposManutencaoRouter,
 
   // ==================== PAGAMENTOS ====================
   pagamentos: pagamentosRouter,

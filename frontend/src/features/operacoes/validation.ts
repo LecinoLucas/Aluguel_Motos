@@ -21,9 +21,22 @@ export type PagamentoFormValues = z.infer<typeof createPagamentoSchema>;
 
 export const createManutencaoSchema = z.object({
   motoId: z.coerce.number().int().positive("Moto é obrigatória"),
+  peca: z.string().min(2, "Peça é obrigatória"),
   tipo: z.string().min(1, "Tipo de manutenção é obrigatório"),
   data: z.string().min(1, "Data é obrigatória"),
   custo: z.coerce.number().positive("Custo deve ser positivo"),
+  kmAtual: z
+    .preprocess(
+      (value) => (value === "" || value === null || value === undefined ? undefined : value),
+      z.coerce.number().int().positive().optional(),
+    )
+    .optional(),
+  intervaloDiasPrevisto: z
+    .preprocess(
+      (value) => (value === "" || value === null || value === undefined ? undefined : value),
+      z.coerce.number().int().positive().optional(),
+    )
+    .optional(),
   descricao: z.string().optional(),
 });
 

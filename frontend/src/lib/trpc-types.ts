@@ -10,6 +10,7 @@ export type MotoListItem = RouterOutputs["motos"]["list"][number];
 export type ContratoListItem = RouterOutputs["contratos"]["list"][number];
 export type PagamentoListItem = RouterOutputs["pagamentos"]["list"][number];
 export type ManutencaoListItem = RouterOutputs["manutencoes"]["list"][number];
+export type TipoManutencaoListItem = RouterOutputs["tiposManutencao"]["list"][number];
 export type ContratoProximoVencimentoItem = RouterOutputs["dashboard"]["contratosProximosVencimento"][number];
 export type PagamentoAtrasadoItem = RouterOutputs["dashboard"]["pagamentosAtrasados"][number];
 

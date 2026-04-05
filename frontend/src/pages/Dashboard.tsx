@@ -19,13 +19,28 @@ export default function Dashboard() {
   if (!user) return null;
 
   const chartData = mapReceitaMensalChartData(receitaMensal.data);
+  const today = new Date();
+  const greetingName = user?.name?.split(" ")[0] ?? "Administrador";
 
   return (
     <DashboardLayout>
       <div className="dashboard-shell">
         <div className="dashboard-hero">
-          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Dashboard</h1>
-          <p className="text-muted-foreground mt-2">Bem-vindo ao sistema de gestão de motos</p>
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <div className="dashboard-hero__eyebrow">Operação central</div>
+              <h1 className="dashboard-hero__title">Dashboard</h1>
+              <p className="dashboard-hero__subtitle">
+                Bem-vindo, {greetingName}. Aqui você acompanha a saúde da frota, a receita e os pontos de atenção
+                do aluguel em um só lugar.
+              </p>
+              <div className="dashboard-hero__meta">
+                <span>Hoje: {formatDateBR(today)}</span>
+                <span>•</span>
+                <span>Visão geral da operação</span>
+              </div>
+            </div>
+          </div>
         </div>
 
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">

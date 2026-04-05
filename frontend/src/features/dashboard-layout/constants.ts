@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import { FileText, FolderPlus, LayoutDashboard } from "lucide-react";
+import { FileText, FolderPlus, LayoutDashboard, Wrench } from "lucide-react";
 
 export interface DashboardMenuItem {
   icon: LucideIcon;
@@ -10,6 +10,7 @@ export interface DashboardMenuItem {
 export const menuItems: DashboardMenuItem[] = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
   { icon: FolderPlus, label: "Cadastros", path: "/cadastros" },
+  { icon: Wrench, label: "Manutenções", path: "/manutencoes" },
   { icon: FileText, label: "Gerar Contrato", path: "/gerar-contrato" },
 ];
 

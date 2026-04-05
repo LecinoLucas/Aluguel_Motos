@@ -94,6 +94,14 @@ function mapKnownMessage(message: string): Partial<ErrorDetails> {
         fieldErrors: { placa: "Esta placa já está cadastrada." },
       };
     }
+
+    if (lower.includes("tipos_manutencao") && lower.includes("nome")) {
+      return {
+        message: "Já existe um tipo de manutenção com este nome.",
+        details: ["Use outro nome ou ajuste o tipo já cadastrado."],
+        fieldErrors: { nome: "Este tipo de manutenção já está cadastrado." },
+      };
+    }
   }
 
   if (

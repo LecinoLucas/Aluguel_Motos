@@ -110,6 +110,24 @@ export type Locador = typeof locadores.$inferSelect;
 export type InsertLocador = typeof locadores.$inferInsert;
 
 /**
+ * Tabela de Tipos de Manutenção
+ */
+export const tiposManutencao = pgTable("tipos_manutencao", {
+  id: serial("id").primaryKey(),
+  nome: varchar("nome", { length: 120 }).notNull().unique(),
+  descricao: text("descricao"),
+  intervaloDiasPadrao: integer("intervalo_dias_padrao"),
+  createdAt: timestamp("createdAt", { mode: "date" }).defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt", { mode: "date" })
+    .defaultNow()
+    .$onUpdateFn(() => new Date())
+    .notNull(),
+});
+
+export type TipoManutencao = typeof tiposManutencao.$inferSelect;
+export type InsertTipoManutencao = typeof tiposManutencao.$inferInsert;
+
+/**
  * Tabela de Contratos
  */
 export const contratos = pgTable("contratos", {
@@ -142,9 +160,12 @@ export const manutencoes = pgTable("manutencoes", {
   motoId: integer("moto_id")
     .notNull()
     .references(() => motos.id, { onDelete: "cascade" }),
+  peca: varchar("peca", { length: 120 }),
   tipo: varchar("tipo", { length: 100 }).notNull(),
   data: date("data", { mode: "date" }).notNull(),
   custo: numeric("custo", { precision: 10, scale: 2 }).notNull().default("0"),
+  kmAtual: integer("km_atual"),
+  intervaloDiasPrevisto: integer("intervalo_dias_previsto"),
   descricao: text("descricao"),
   createdAt: timestamp("createdAt", { mode: "date" }).defaultNow().notNull(),
   updatedAt: timestamp("updatedAt", { mode: "date" })

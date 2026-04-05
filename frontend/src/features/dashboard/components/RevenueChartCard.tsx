@@ -1,6 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { cn } from "@/lib/utils";
 
 interface RevenueChartCardProps {
   isLoading: boolean;
@@ -9,7 +10,7 @@ interface RevenueChartCardProps {
 
 export function RevenueChartCard({ isLoading, chartData }: RevenueChartCardProps) {
   return (
-    <Card>
+    <Card className={cn("dashboard-chart-card")}>
       <CardHeader>
         <CardTitle>Receita Mensal</CardTitle>
         <CardDescription>Últimos 12 meses</CardDescription>

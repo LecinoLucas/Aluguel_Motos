@@ -2,22 +2,48 @@
 
 @layer components {
   .contract-page-shell {
-    @apply space-y-6;
+    @apply space-y-6 md:space-y-8;
   }
 
   .contract-page-header {
-    @apply flex flex-col gap-4 rounded-2xl border bg-card px-5 py-5 shadow-sm sm:flex-row sm:items-start sm:justify-between sm:px-6;
+    @apply relative flex flex-col gap-5 overflow-hidden rounded-3xl border bg-card px-5 py-5 shadow-sm sm:flex-row sm:items-start sm:justify-between sm:px-6;
     background:
-      radial-gradient(circle at top right, color-mix(in oklab, var(--color-primary) 12%, transparent), transparent 36%),
-      linear-gradient(135deg, color-mix(in oklab, var(--color-card) 94%, white), var(--color-card));
+      radial-gradient(circle at top right, color-mix(in oklab, var(--color-primary) 16%, transparent), transparent 36%),
+      radial-gradient(circle at bottom left, color-mix(in oklab, var(--color-blue-400) 9%, transparent), transparent 28%),
+      linear-gradient(135deg, color-mix(in oklab, var(--color-card) 95%, white), var(--color-card));
+  }
+
+  .contract-page-header::after {
+    content: "";
+    @apply pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/35 to-transparent;
+  }
+
+  .contract-page-header__eyebrow {
+    @apply inline-flex w-fit items-center rounded-full border bg-background/70 px-3 py-1 text-xs font-medium uppercase tracking-[0.22em] text-muted-foreground shadow-sm backdrop-blur;
+  }
+
+  .contract-page-header__title {
+    @apply mt-4 text-2xl font-semibold tracking-tight sm:text-4xl;
+  }
+
+  .contract-page-header__subtitle {
+    @apply mt-3 max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base;
   }
 
   .contract-page-actions {
-    @apply flex w-full flex-col gap-2 sm:w-auto sm:flex-row;
+    @apply flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center;
+  }
+
+  .contract-tabs-shell {
+    @apply rounded-2xl border bg-card/70 p-1.5 shadow-sm;
+  }
+
+  .contract-tabs-list {
+    @apply h-auto min-h-11 w-full bg-transparent p-0;
   }
 
   .contract-section-card {
-    @apply overflow-hidden border shadow-sm;
+    @apply overflow-hidden rounded-2xl border bg-card/90 shadow-sm;
   }
 
   .contract-selector-grid {
@@ -25,7 +51,7 @@
   }
 
   .contract-summary-card {
-    @apply rounded-xl border bg-muted/30 p-4 text-sm leading-6;
+    @apply rounded-2xl border bg-muted/30 p-4 text-sm leading-6 shadow-sm;
   }
 
   .contract-import-grid {
@@ -41,7 +67,7 @@
   }
 
   .contract-form-section {
-    @apply rounded-xl border bg-card/70;
+    @apply rounded-2xl border bg-card/80 shadow-sm;
   }
 
   .contract-form-section__header {
@@ -53,7 +79,7 @@
   }
 
   .contract-preview-card {
-    @apply border shadow-sm;
+    @apply overflow-hidden rounded-2xl border shadow-sm;
   }
 
   .contract-preview-body {

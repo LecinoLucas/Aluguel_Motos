@@ -3,6 +3,8 @@ import type {
   LocadorFormErrors,
   LocatarioFormData,
   LocatarioFormErrors,
+  TipoManutencaoFormData,
+  TipoManutencaoFormErrors,
   VeiculoFormData,
   VeiculoFormErrors,
 } from "./types";
@@ -162,6 +164,26 @@ export function validateVeiculoForm(form: VeiculoFormData): VeiculoFormErrors {
 
   if (!form.renavam.trim()) errors.renavam = "Informe o RENAVAM do veículo.";
   else if (!isRenavamLike(form.renavam)) errors.renavam = "RENAVAM inválido. Confira os dígitos do documento.";
+
+  return errors;
+}
+
+export function validateTipoManutencaoForm(form: TipoManutencaoFormData): TipoManutencaoFormErrors {
+  const errors: TipoManutencaoFormErrors = {};
+  const intervalo = Number(form.intervaloDiasPadrao);
+
+  if (!form.nome.trim()) errors.nome = "Informe o nome do tipo de manutenção.";
+  else if (form.nome.trim().length < 2) errors.nome = "O nome do tipo precisa ter pelo menos 2 caracteres.";
+
+  if (form.descricao.trim() && form.descricao.trim().length > 240) {
+    errors.descricao = "A descrição pode ter no máximo 240 caracteres.";
+  }
+
+  if (form.intervaloDiasPadrao.trim()) {
+    if (!Number.isInteger(intervalo) || intervalo <= 0) {
+      errors.intervaloDiasPadrao = "O intervalo padrão deve ser um número inteiro positivo.";
+    }
+  }
 
   return errors;
 }

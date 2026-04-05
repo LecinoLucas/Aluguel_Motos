@@ -2,17 +2,35 @@
 
 @layer components {
   .operacoes-page-shell {
-    @apply space-y-6;
+    @apply space-y-6 md:space-y-8;
   }
 
   .operacoes-page-header {
-    @apply rounded-2xl border bg-card px-5 py-5 shadow-sm sm:px-6;
+    @apply relative overflow-hidden rounded-3xl border bg-card px-5 py-5 shadow-sm sm:px-6;
     background:
-      radial-gradient(circle at top right, color-mix(in oklab, var(--color-primary) 10%, transparent), transparent 34%),
-      linear-gradient(180deg, color-mix(in oklab, var(--color-card) 96%, white), var(--color-card));
+      radial-gradient(circle at top right, color-mix(in oklab, var(--color-primary) 14%, transparent), transparent 34%),
+      radial-gradient(circle at bottom left, color-mix(in oklab, var(--color-teal-500) 10%, transparent), transparent 26%),
+      linear-gradient(180deg, color-mix(in oklab, var(--color-card) 97%, white), var(--color-card));
+  }
+
+  .operacoes-page-header::after {
+    content: "";
+    @apply pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent;
+  }
+
+  .operacoes-page-header__eyebrow {
+    @apply inline-flex w-fit items-center rounded-full border bg-background/70 px-3 py-1 text-xs font-medium uppercase tracking-[0.22em] text-muted-foreground shadow-sm backdrop-blur;
+  }
+
+  .operacoes-page-header__title {
+    @apply mt-4 text-2xl font-semibold tracking-tight sm:text-4xl;
+  }
+
+  .operacoes-page-header__subtitle {
+    @apply mt-3 max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base;
   }
 
   .operacoes-section-card {
-    @apply overflow-hidden border shadow-sm;
+    @apply overflow-hidden rounded-2xl border bg-card/90 shadow-sm;
   }
 }

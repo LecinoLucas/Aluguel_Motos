@@ -204,10 +204,37 @@ export const createContratoSchema = z.object({
 
 export const createManutencaoSchema = z.object({
   motoId: z.number().int().positive(),
+  peca: z.string().min(2, "Peça é obrigatória"),
   tipo: z.string().min(1, "Tipo de manutenção é obrigatório"),
   data: z.coerce.date(),
   custo: z.number().positive("Custo deve ser positivo"),
+  kmAtual: z
+    .preprocess(
+      (value) => (value === "" || value === null || value === undefined ? undefined : value),
+      z.coerce.number().int().positive().optional(),
+    )
+    .optional(),
+  intervaloDiasPrevisto: z
+    .preprocess(
+      (value) => (value === "" || value === null || value === undefined ? undefined : value),
+      z.coerce.number().int().positive().optional(),
+    )
+    .optional(),
   descricao: z.string().optional(),
+});
+
+export const createTipoManutencaoSchema = z.object({
+  nome: z.string().min(2, "Nome do tipo é obrigatório"),
+  descricao: z.preprocess(
+    (value) => (value === "" ? undefined : value),
+    z.string().max(240, "Descrição muito longa").optional(),
+  ),
+  intervaloDiasPadrao: z
+    .preprocess(
+      (value) => (value === "" || value === null || value === undefined ? undefined : value),
+      z.coerce.number().int().positive().optional(),
+    )
+    .optional(),
 });
 
 export const createPagamentoSchema = z.object({
@@ -267,4 +294,18 @@ export const updateContratoSchema = z.object({
 export const updatePagamentoSchema = z.object({
   status: z.enum(["pendente", "pago", "atrasado"]).optional(),
   valor: z.number().positive().optional().transform((v) => v?.toString()),
+});
+
+export const updateTipoManutencaoSchema = z.object({
+  nome: z.string().min(2, "Nome do tipo inválido").optional(),
+  descricao: z.preprocess(
+    (value) => (value === "" ? undefined : value),
+    z.string().max(240, "Descrição muito longa").optional(),
+  ),
+  intervaloDiasPadrao: z
+    .preprocess(
+      (value) => (value === "" || value === null || value === undefined ? undefined : value),
+      z.coerce.number().int().positive().optional(),
+    )
+    .optional(),
 });

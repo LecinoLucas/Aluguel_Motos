@@ -22,9 +22,12 @@ export interface PagamentoRecord {
 export interface ManutencaoRecord {
   id: number;
   motoId: number;
+  peca?: string | null;
   tipo: string;
   data: string | Date;
   custo: string | number;
+  kmAtual?: number | null;
+  intervaloDiasPrevisto?: number | null;
   descricao?: string | null;
 }
 

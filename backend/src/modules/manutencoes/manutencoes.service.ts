@@ -4,9 +4,12 @@ import * as manutencoesRepository from "./manutencoes.repository";
 
 export async function createManutencao(input: {
   motoId: number;
+  peca: string;
   tipo: string;
   data: Date;
   custo: number;
+  kmAtual?: number;
+  intervaloDiasPrevisto?: number;
   descricao?: string;
 }) {
   const moto = await motosRepository.getMotoById(input.motoId);
@@ -19,9 +22,12 @@ export async function createManutencao(input: {
 
   await manutencoesRepository.createManutencao({
     motoId: input.motoId,
+    peca: input.peca.trim(),
     tipo: input.tipo,
     data: input.data,
     custo: input.custo.toString(),
+    kmAtual: input.kmAtual,
+    intervaloDiasPrevisto: input.intervaloDiasPrevisto,
     descricao: input.descricao,
   } as any);
 
@@ -45,9 +51,18 @@ export async function getManutencaoById(id: number) {
   return manutencao;
 }
 
-export async function updateManutencao(id: number, data: { tipo?: string; custo?: string; descricao?: string }) {
+export async function updateManutencao(
+  id: number,
+  data: { peca?: string; tipo?: string; custo?: string; kmAtual?: number; intervaloDiasPrevisto?: number; descricao?: string },
+) {
   await getManutencaoById(id);
-  await manutencoesRepository.updateManutencao(id, data as any);
+  await manutencoesRepository.updateManutencao(
+    id,
+    {
+      ...data,
+      peca: data.peca?.trim(),
+    } as any,
+  );
   return { success: true } as const;
 }
 

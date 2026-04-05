@@ -1,5 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface AlertListCardProps<T> {
   title: string;
@@ -21,7 +22,7 @@ export function AlertListCard<T>({
   renderItem,
 }: AlertListCardProps<T>) {
   return (
-    <Card>
+    <Card className={cn("dashboard-alert-card")}>
       <CardHeader>
         <CardTitle className="text-base">{title}</CardTitle>
         <CardDescription>{description}</CardDescription>

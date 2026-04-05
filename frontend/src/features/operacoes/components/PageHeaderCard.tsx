@@ -1,13 +1,15 @@
 interface PageHeaderCardProps {
   title: string;
   description: string;
+  eyebrow?: string;
 }
 
-export function PageHeaderCard({ title, description }: PageHeaderCardProps) {
+export function PageHeaderCard({ title, description, eyebrow = "Visão operacional" }: PageHeaderCardProps) {
   return (
     <div className="operacoes-page-header">
-      <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">{title}</h1>
-      <p className="mt-2 text-muted-foreground">{description}</p>
+      <div className="operacoes-page-header__eyebrow">{eyebrow}</div>
+      <h1 className="operacoes-page-header__title">{title}</h1>
+      <p className="operacoes-page-header__subtitle">{description}</p>
     </div>
   );
 }
